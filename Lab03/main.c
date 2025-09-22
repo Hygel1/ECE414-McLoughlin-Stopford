@@ -61,12 +61,15 @@ enum currentPlayer
 uint8_t ledsStates = 0;           // 8-bit value for LED control
 uint8_t ledsStatesCounter = 0;    // Counter for multi-tick actions
 uint32_t t1, t2, t3, t4;          // Timers for debounce and game timing
-uint32_t gameTimer = 300;         // Game speed timer (starts at 300ms)
+uint32_t gameTimer = 300000;         // Game speed timer (starts at 300ms)
 uint8_t numberOfRoundsPlayed = 0; // Track rounds for speed increase
 uint32_t randValue;
 uint8_t switchPlayer = 0;
 uint8_t SW1 = 0;
 uint8_t SW2 = 0;
+uint8_t firstTravel = 0;
+uint8_t stillHoldL=0;
+uint8_t stillHoldR=0;
 
 // Main game state machine tick function
 void tick()
@@ -96,12 +99,14 @@ void tick()
         if (rand()*1000 % 2 == 1) //odd
         {
             currentPlayer = PlayerL;
+            led_out_write(0x01);
             ledsStates = 0x01;
             printf("L Serve \n");
         }
         else
         {
             currentPlayer = PlayerR;
+            led_out_write(0x80);
             ledsStates = 0x80;
             printf("R Serve \n");
         }
@@ -116,65 +121,98 @@ void tick()
 
         break;
     case Serve:
-    printf("serve");
-        if((currentPlayer == PlayerR && SW2) || (currentPlayer == PlayerL && SW1)) PONG_State = Travel;
-        if(numberOfRoundsPlayed > 2) gameTimer = 200;
-        if(numberOfRoundsPlayed > 4) gameTimer = 100;
+    printf("serve \n");
+        if((currentPlayer == PlayerR && SW2) || (currentPlayer == PlayerL && SW1)) {
+            t3 = timer_read();
+            PONG_State = Travel;
+            if (currentPlayer == PlayerR)
+            {
+                printf("travel left\n");
+                ledsStates = ledsStates << 1;
+                //busy_wait_ms(gameTimer);
+            }
+            else
+            { // PlayerR
+                printf("travel right\n");
+                ledsStates = ledsStates >> 1;
+                //busy_wait_ms(gameTimer);
+            }
+        }
+        if(numberOfRoundsPlayed > 2) gameTimer = 200000;
+        if(numberOfRoundsPlayed > 4) gameTimer = 100000;
+        switchPlayer = 1;
+        firstTravel = 1;
         break;
 
     case Travel:
-    printf("travel");
-        if ((ledsStates = 0x80 && SW1) || (ledsStates = 0x01 && SW2))
+    printf("travel \n");
+        if (!firstTravel && ((ledsStates == 0x80 && SW1) || (ledsStates == 0x01 && SW2)))
         {
             PONG_State = Thwack;
         }
-        else if (SW1)
+        else if (SW1)//&&!stillHoldL && timer_read()-300 > t3)
         {
             currentPlayer = PlayerL;
             PONG_State = Victory;
+            printf("V1");
         }
-        else if (SW2)
+        else if (SW2)//&&!stillHoldR&& timer_read()-300 > t3)
         {
             currentPlayer = PlayerR;
             PONG_State = Victory;
+            printf("v2");
+        }
+        else if((ledsStates <= 0x01 && currentPlayer == PlayerL) || (ledsStates >= 0x80 && currentPlayer == PlayerR)) {
+            PONG_State = Victory;
+            printf("v3");
         }
         else
         {
             if (currentPlayer == PlayerL)
             {
-                ledsStates >> 1;
-                busy_wait_ms(gameTimer);
+                printf("travel left\n");
+                ledsStates = ledsStates << 1;
+                //busy_wait_ms(gameTimer);
             }
             else
             { // PlayerR
-                ledsStates << 1;
-                busy_wait_ms(gameTimer);
+                printf("travel right\n");
+                ledsStates = ledsStates >> 1;
+                //busy_wait_ms(gameTimer);
             }
+            led_out_write(ledsStates);
         }
-
+        firstTravel = 0;
+        if(!SW1) stillHoldL=0;
+        if(!SW2) stillHoldR=0;
         break;
 
     case Thwack:
-    printf("thwack");
+    printf("thwack \n");
+        firstTravel = 1;
         switchPlayer = 1;
+        if(currentPlayer==PlayerL) stillHoldL=1;
+        if(currentPlayer==PlayerR) stillHoldR=1;
         PONG_State = Travel;
         break;
 
     case Victory:
-    printf("victory");
+    printf("victory\n");
         // Nonactive player wins
         if(PlayerL) {
-            ledsStates = 0x80;
-            busy_wait_ms(100);
-            ledsStates = 0x80;
-            busy_wait_ms(100);
-            ledsStates = 0x80;
+            printf("right wins");
+            led_out_write(0x80);
+            busy_wait_ms(100000);
+            led_out_write(0x80);
+            busy_wait_ms(100000);
+            led_out_write(0x80);
         } else {
-            ledsStates = 0x01;
-            busy_wait_ms(100);
-            ledsStates = 0x01;
-            busy_wait_ms(100);
-            ledsStates = 0x01;
+            printf("left wins");
+            led_out_write(0x01);
+            busy_wait_ms(100000);
+            led_out_write(0x01);
+            busy_wait_ms(100000);
+            led_out_write(0x01);
         }
         PONG_State = Init;
         break;
@@ -218,8 +256,8 @@ void initializeStuff()
     uart_init(uart0, 115200);
     led_out_init();
     sw_in_init();
-    //debounce_sw1_init();
-    //debounce_sw2_init();
+    debounce_sw1_init();
+    debounce_sw2_init();
     timer_read();
     // TODO: Initialize all required modules
     // Hints:
@@ -237,25 +275,46 @@ int main()
 
     // TODO: Set initial state for the state machine
     PONG_State = Init;
-    uint32_t startTime=timer_read();
+    uint8_t t1 = timer_read();
+    uint8_t t4 = timer_read();
     while (1)
     {
-        if(sw_in_read1()){ //if button pressed, set true for 50ms
-            SW1=0x01;
-            uint32_t startTime=timer_read();
-            while(1){ //if pushed, stall for 50ms
-                if(timer_read()-startTime>50) break;
-            }
+        t2 = timer_read();
+        if(t1-t2 >= DEBOUNCE_PD_MS) {
+            debounce_sw1_tick();
+            debounce_sw2_tick();
+            SW2 = debounce_sw2_pressed();
+            SW1 = debounce_sw1_pressed();
+            t1=t2;
         }
-        if(sw_in_read2()){ //if button pressed, set true for 50ms
-            SW2=0x01;
-            uint32_t startTime=timer_read();
-            while(1){ //if pushed, stall for 50ms
-                if(timer_read()-startTime>50) break;
-            }
+        // if(sw_in_read1()){ //if button pressed, set true for 50ms
+        //     SW1=0x01;
+        //     uint32_t startTime=timer_read();
+        //     while(1){ //if pushed, stall for 50ms
+        //         if(timer_read()-startTime>50) break;
+        //     }
+        // }
+        // if(sw_in_read2()){ //if button pressed, set true for 50ms
+        //     SW2=0x01;
+        //     uint32_t startTime=timer_read();
+        //     while(1){ //if pushed, stall for 50ms
+        //         if(timer_read()-startTime>50) break;
+        //     }
+        if(t4-t2 >= gameTimer) {
+            tick();
+            t4=t2;
+            printf("LedsStates %d", ledsStates);
         }
-        tick();
-        SW1=0x00;SW2=0x00;
+        // printf("SW1 ");
+        // printf(SW1);
+        // printf("\n SW2 ");
+        // printf(SW2);
+        // printf("\n");
+        
+        }
+        
+        //SW1=0x00;SW2=0x00;
+
         // Button Debounce Code - TODO: Implement debounce timing
         // Hints:
         // - Read current time with timer_read()
@@ -269,7 +328,6 @@ int main()
         // - If so, call tick() function
         // - Update timer reference
     }
-}
 
 /*
  * IMPLEMENTATION HINTS AND REQUIREMENTS:

@@ -9,6 +9,10 @@ pico_sdk_init()
 add_executable(Lab03
     led_out.c
     led_out.h
+    debounce_sw1.h
+debounce_sw1.c
+debounce_sw2.h
+debounce_sw2.c
     sw_in.c
     sw_in.h
     timer.c
