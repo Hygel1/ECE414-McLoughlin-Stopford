@@ -162,7 +162,7 @@ void tick()
             PONG_State = Victory;
             printf("v2");
         }
-        else if((ledsStates <= 0x01 && currentPlayer == PlayerL) || (ledsStates >= 0x80 && currentPlayer == PlayerR)) {
+        else if((ledsStates <= 0x01 && currentPlayer == PlayerL) || (ledsStates < 0x00 && currentPlayer == PlayerR)) {
             PONG_State = Victory;
             printf("v3");
         }
@@ -202,17 +202,28 @@ void tick()
         if(PlayerL) {
             printf("right wins");
             led_out_write(0x80);
-            busy_wait_ms(100000);
+            busy_wait_ms(100);
+            led_out_write(0x00);
+            busy_wait_ms(100);
             led_out_write(0x80);
-            busy_wait_ms(100000);
+            busy_wait_ms(100);
+            led_out_write(0x00);
+            busy_wait_ms(100);
             led_out_write(0x80);
+            busy_wait_ms(100);
         } else {
             printf("left wins");
             led_out_write(0x01);
-            busy_wait_ms(100000);
+            busy_wait_ms(100);
+            led_out_write(0x00);
+            busy_wait_ms(100);
             led_out_write(0x01);
-            busy_wait_ms(100000);
+            busy_wait_ms(100);
+            led_out_write(0x00);
+            busy_wait_ms(100);
             led_out_write(0x01);
+            busy_wait_ms(100);
+            led_out_write(0x00);
         }
         PONG_State = Init;
         break;
