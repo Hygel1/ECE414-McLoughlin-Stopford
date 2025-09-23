@@ -75,7 +75,7 @@ void tick()
     switch (PONG_State)
     {
     case Init:
-        printf("Game Initializing\n");
+        //printf("Game Initializing\n");
         ledsStatesCounter = 0;
         numberOfRoundsPlayed = 0;
         gameDelay = 300; // Reset to initial speed
@@ -95,11 +95,11 @@ void tick()
         break;
         
     case Serve:
-        printf("Serve State - Waiting for player %s\n", (currentPlayer == PlayerL) ? "L" : "R");
+        //printf("Serve State - Waiting for player %s\n", (currentPlayer == PlayerL) ? "L" : "R");
         
         // Check if serving player pressed their button
         if ((currentPlayer == PlayerL && SW1) || (currentPlayer == PlayerR && SW2)) {
-            printf("Serve accepted - ball moving toward opponent\n");
+            //printf("Serve accepted - ball moving toward opponent\n");
             PONG_State = Travel;
             firstTravel = true;
             buttonPressedThisCycle = true;
@@ -107,13 +107,13 @@ void tick()
         break;
         
     case Travel:
-        printf("Travel State - Ball moving, LED pattern: 0x%02X\n", ledsStates);
+        p//rintf("Travel State - Ball moving, LED pattern: 0x%02X\n", ledsStates);
         
         // Check for valid hit when ball reaches opponent's end
         if (!firstTravel) {
             if ((ledsStates == 0x80 && SW1) || (ledsStates == 0x01 && SW2)) {
                 // Valid hit - reverse direction
-                printf("Valid hit - reversing direction\n");
+                //printf("Valid hit - reversing direction\n");
                 PONG_State = Thwack;
                 numberOfRoundsPlayed++;
                 buttonPressedThisCycle = true;
@@ -128,7 +128,7 @@ void tick()
         // Check for miss (wrong button press)
         if ((SW1 && ledsStates != 0x80) || (SW2 && ledsStates != 0x01)) {
             // Wrong button press - point goes to other player
-            printf("Miss detected - wrong button press\n");
+            //printf("Miss detected - wrong button press\n");
             if(SW1){
                 currentPlayer = PlayerR;
             }else{
@@ -144,17 +144,17 @@ void tick()
         if (currentPlayer == PlayerL) {
             // Ball moving left to right
             ledsStates = ledsStates >> 1;
-            printf("Ball moving right\n");
+            //printf("Ball moving right\n");
         } else {
             // Ball moving right to left  
             ledsStates = ledsStates << 1;
-            printf("Ball moving left\n");
+            //printf("Ball moving left\n");
         }
         
         // Check if ball reached the end without being hit
         if (ledsStates == 0x00) {
             // Ball reached the end without being hit
-            printf("Miss detected - ball reached end\n");
+            //printf("Miss detected - ball reached end\n");
             PONG_State = Victory;
             break;
         }
@@ -164,14 +164,14 @@ void tick()
         break;
         
     case Thwack:
-        printf("Thwack State - Switching players\n");
+        //printf("Thwack State - Switching players\n");
         // Switch players and continue
         currentPlayer = (currentPlayer == PlayerL) ? PlayerR : PlayerL;
         PONG_State = Travel;
         break;
         
     case Victory:
-        printf("Victory State - Player %s wins!\n", (currentPlayer == PlayerL) ? "L" : "R");
+        printf("Victory State - Player %s wins!\n", (currentPlayer == PlayerL) ? "R" : "L");
         
         // Flash winning player's LED 3 times
         for (int i = 0; i < 3; i++) {
