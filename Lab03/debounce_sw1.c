@@ -43,7 +43,9 @@ void debounce_sw1_tick() {
             break;
         case MAYBENOPUSH:
             if (btn) DB_State = PUSHED;
-            else DB_State = NOPUSH;
+            else{ DB_State = NOPUSH;
+                btn_pressed=false;
+            }
             break;
         default:
             DB_State = NOPUSH;
@@ -59,7 +61,7 @@ void debounce_sw1_tick() {
 // been pressed.  Return FALSE until the button is released and pressed again
 bool debounce_sw1_pressed() {
     if (btn_pressed) {
-        btn_pressed = false; 
+        //btn_pressed = false; 
         return true;
     } else return false;
 }

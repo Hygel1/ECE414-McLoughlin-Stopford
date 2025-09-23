@@ -1,3 +1,5 @@
+// Corrected main.c file by Prof. Kalgaonkar.
+
 /* ECE414 - Lab 3 - main.c file Template.
 Ideally, in your Lab3 project folder, you should have the following files to start with:
     - CMakeLists.txt
@@ -14,8 +16,6 @@ Ideally, in your Lab3 project folder, you should have the following files to sta
     - timer.h
     - uart.c
     - uart.h
-    (The UART functionality can be embedded in the main file (#include "hardware/uart.h"), which is acceptable since it's just initialization and printf statements. Separate uart.c/uart.h files would be good practice for modularity, but isn't strictly necessary for this lab.)
-    - gpio.c (to test pico's GPIO functionality if needed)
 */
 
 #include "pico/stdlib.h"
@@ -37,345 +37,219 @@ Ideally, in your Lab3 project folder, you should have the following files to sta
 #define UART_TX_PIN 0
 #define UART_RX_PIN 1
 
-// FSM States - TODO: Define your game states
+// FSM States
 enum PONG_States
 {
-    // TODO: Add your states here (e.g., Init, Serve, Travel, etc.)
     Init,
     Serve,
     Travel,
     Thwack,
     Victory
-
 } PONG_State;
 
-// Player enum - TODO: Define which player is currently active
+// Player enum
 enum currentPlayer
 {
     PlayerL,
     PlayerR
-    // TODO: Define PlayerL and PlayerR
 } currentPlayer;
 
 // Global variables
 uint8_t ledsStates = 0;           // 8-bit value for LED control
 uint8_t ledsStatesCounter = 0;    // Counter for multi-tick actions
-uint32_t t1, t2, t3, t4;          // Timers for debounce and game timing
-uint32_t gameTimer = 300000;         // Game speed timer (starts at 300ms)
+uint32_t lastDebounceTime = 0;    // Timers for debounce
+uint32_t lastGameTime = 0;        // Timer for game timing
+uint32_t gameDelay = 300;         // Game speed in ms (starts at 300ms)
 uint8_t numberOfRoundsPlayed = 0; // Track rounds for speed increase
-uint32_t randValue;
-uint8_t switchPlayer = 0;
-uint8_t SW1 = 0;
-uint8_t SW2 = 0;
-uint8_t firstTravel = 0;
-uint8_t stillHoldL=0;
-uint8_t stillHoldR=0;
+bool SW1 = false;
+bool SW2 = false;
+bool firstTravel = true;
+bool buttonPressedThisCycle = false;
 
 // Main game state machine tick function
 void tick()
 {
-    switch (currentPlayer)
-    {
-    case PlayerL:
-        if (switchPlayer)
-            currentPlayer = PlayerR;
-        break;
-    case PlayerR:
-        if (switchPlayer)
-            currentPlayer = PlayerL;
-        break;
-    default:
-        break;
-    }
-    switchPlayer = 0;
+    buttonPressedThisCycle = false;
+    
+    // Handle player switching
     switch (PONG_State)
     {
     case Init:
-    //add light LED
-        printf("init");
+        printf("Game Initializing\n");
         ledsStatesCounter = 0;
         numberOfRoundsPlayed = 0;
-        t1, t2, t3, t4 = 0;
-        if (rand()*1000 % 2 == 1) //odd
-        {
+        gameDelay = 300; // Reset to initial speed
+        
+        // Randomly choose starting player
+        if (rand() % 2 == 1) {
             currentPlayer = PlayerL;
-            led_out_write(0x01);
-            ledsStates = 0x01;
-            printf("L Serve \n");
-        }
-        else
-        {
+            ledsStates = 0x80; // Leftmost LED
+            printf("L Serve\n");
+        } else {
             currentPlayer = PlayerR;
-            led_out_write(0x80);
-            ledsStates = 0x80;
-            printf("R Serve \n");
+            ledsStates = 0x01; // Rightmost LED
+            printf("R Serve\n");
         }
+        led_out_write(ledsStates);
         PONG_State = Serve;
-        // TODO: Initialize the game
-        // Hints:
-        // - Use rand() % 2 to randomly choose starting player
-        // - Set appropriate LED (0x80 for left, 0x01 for right)
-        // - Print serve message to UART
-        // - Transition to Serve state
-        // - Reset counters
-
         break;
+        
     case Serve:
-    printf("serve \n");
-        if((currentPlayer == PlayerR && SW2) || (currentPlayer == PlayerL && SW1)) {
-            t3 = timer_read();
+        printf("Serve State - Waiting for player %s\n", (currentPlayer == PlayerL) ? "L" : "R");
+        
+        // Check if serving player pressed their button
+        if ((currentPlayer == PlayerL && SW1) || (currentPlayer == PlayerR && SW2)) {
+            printf("Serve accepted - ball moving toward opponent\n");
             PONG_State = Travel;
-            if (currentPlayer == PlayerR)
-            {
-                printf("travel left\n");
-                ledsStates = ledsStates << 1;
-                //busy_wait_ms(gameTimer);
-            }
-            else
-            { // PlayerR
-                printf("travel right\n");
-                ledsStates = ledsStates >> 1;
-                //busy_wait_ms(gameTimer);
-            }
+            firstTravel = true;
+            buttonPressedThisCycle = true;
         }
-        if(numberOfRoundsPlayed > 2) gameTimer = 200000;
-        if(numberOfRoundsPlayed > 4) gameTimer = 100000;
-        switchPlayer = 1;
-        firstTravel = 1;
         break;
-
+        
     case Travel:
-    printf("travel \n");
-        if (!firstTravel && ((ledsStates == 0x80 && SW1) || (ledsStates == 0x01 && SW2)))
-        {
-            PONG_State = Thwack;
-        }
-        else if (SW1)//&&!stillHoldL && timer_read()-300 > t3)
-        {
-            currentPlayer = PlayerL;
-            PONG_State = Victory;
-            printf("V1");
-        }
-        else if (SW2)//&&!stillHoldR&& timer_read()-300 > t3)
-        {
-            currentPlayer = PlayerR;
-            PONG_State = Victory;
-            printf("v2");
-        }
-        else if((ledsStates <= 0x01 && currentPlayer == PlayerL) || (ledsStates < 0x00 && currentPlayer == PlayerR)) {
-            PONG_State = Victory;
-            printf("v3");
-        }
-        else
-        {
-            if (currentPlayer == PlayerL)
-            {
-                printf("travel left\n");
-                ledsStates = ledsStates << 1;
-                //busy_wait_ms(gameTimer);
+        printf("Travel State - Ball moving, LED pattern: 0x%02X\n", ledsStates);
+        
+        // Check for valid hit when ball reaches opponent's end
+        if (!firstTravel) {
+            if ((ledsStates == 0x80 && SW1) || (ledsStates == 0x01 && SW2)) {
+                // Valid hit - reverse direction
+                printf("Valid hit - reversing direction\n");
+                PONG_State = Thwack;
+                numberOfRoundsPlayed++;
+                buttonPressedThisCycle = true;
+                
+                // Increase speed after certain number of rounds
+                if (numberOfRoundsPlayed > 2) gameDelay = 200;
+                if (numberOfRoundsPlayed > 4) gameDelay = 100;
+                break;
             }
-            else
-            { // PlayerR
-                printf("travel right\n");
-                ledsStates = ledsStates >> 1;
-                //busy_wait_ms(gameTimer);
-            }
-            led_out_write(ledsStates);
         }
-        firstTravel = 0;
-        if(!SW1) stillHoldL=0;
-        if(!SW2) stillHoldR=0;
+        
+        // Check for miss (wrong button press)
+        if ((SW1 && ledsStates != 0x80) || (SW2 && ledsStates != 0x01)) {
+            // Wrong button press - point goes to other player
+            printf("Miss detected - wrong button press\n");
+            if(SW1){
+                currentPlayer = PlayerR;
+            }else{
+                currentPlayer = PlayerL;
+            }
+            //currentPlayer = (currentPlayer == PlayerR) ? PlayerR : PlayerL;
+            PONG_State = Victory;
+            buttonPressedThisCycle = true;
+            break;
+        }
+        
+        // Move the ball
+        if (currentPlayer == PlayerL) {
+            // Ball moving left to right
+            ledsStates = ledsStates >> 1;
+            printf("Ball moving right\n");
+        } else {
+            // Ball moving right to left  
+            ledsStates = ledsStates << 1;
+            printf("Ball moving left\n");
+        }
+        
+        // Check if ball reached the end without being hit
+        if (ledsStates == 0x00) {
+            // Ball reached the end without being hit
+            printf("Miss detected - ball reached end\n");
+            PONG_State = Victory;
+            break;
+        }
+        
+        led_out_write(ledsStates);
+        firstTravel = false;
         break;
-
+        
     case Thwack:
-    printf("thwack \n");
-        firstTravel = 1;
-        switchPlayer = 1;
-        if(currentPlayer==PlayerL) stillHoldL=1;
-        if(currentPlayer==PlayerR) stillHoldR=1;
+        printf("Thwack State - Switching players\n");
+        // Switch players and continue
+        currentPlayer = (currentPlayer == PlayerL) ? PlayerR : PlayerL;
         PONG_State = Travel;
         break;
-
+        
     case Victory:
-    printf("victory\n");
-        // Nonactive player wins
-        if(PlayerL) {
-            printf("right wins");
-            led_out_write(0x80);
-            busy_wait_ms(100);
-            led_out_write(0x00);
-            busy_wait_ms(100);
-            led_out_write(0x80);
-            busy_wait_ms(100);
-            led_out_write(0x00);
-            busy_wait_ms(100);
-            led_out_write(0x80);
-            busy_wait_ms(100);
-        } else {
-            printf("left wins");
-            led_out_write(0x01);
-            busy_wait_ms(100);
-            led_out_write(0x00);
-            busy_wait_ms(100);
-            led_out_write(0x01);
-            busy_wait_ms(100);
-            led_out_write(0x00);
-            busy_wait_ms(100);
-            led_out_write(0x01);
-            busy_wait_ms(100);
-            led_out_write(0x00);
+        printf("Victory State - Player %s wins!\n", (currentPlayer == PlayerL) ? "L" : "R");
+        
+        // Flash winning player's LED 3 times
+        for (int i = 0; i < 3; i++) {
+            if (currentPlayer == PlayerL) {
+                led_out_write(0x80); // Left LED on
+            } else {
+                led_out_write(0x01); // Right LED on
+            }
+            busy_wait_ms(200);
+            led_out_write(0x00); // All LEDs off
+            busy_wait_ms(200);
         }
+        
+        // Reset for new game
         PONG_State = Init;
         break;
-        // TODO: Add case for Serve state
-        // Hints:
-        // - Wait for serving player to press their button
-        // - When pressed, switch to other player and go to Travel state
-
-        // TODO: Add case for Travel state
-        // Hints:
-        // - Move LED toward current player's side
-        // - Use bit shifting (<<1 or >>1) to move the LED
-        // - Check if ball reached the end (counter >= 7)
-        // - If player presses early, they lose (go to Victory)
-        // - If ball reaches end, go to Thwack state
-
-        // TODO: Add case for Thwack state
-        // Hints:
-        // - Player must hit the ball when it's at their end
-        // - If they hit it, switch players and go to Travel
-        // - If they miss, go to Victory state
-
-        // TODO: Add case for Victory state
-        // Hints:
-        // - Flash the losing player's LED
-        // - Use ledsStatesCounter to control flash timing
-        // - Print loss message to UART
-        // - After flashing, go back to Init
-        // - Update numberOfRoundsPlayed and adjust gameTimer speed
-
+        
     default:
+        PONG_State = Init;
         break;
     }
 }
 
-
-// Initialization function - TODO: Complete the initialization
 void initializeStuff()
 {
     stdio_init_all();
-    uart_init(uart0, 115200);
+    uart_init(UART_ID, BAUD_RATE);
+    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
+    gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
+    
     led_out_init();
     sw_in_init();
     debounce_sw1_init();
     debounce_sw2_init();
-    timer_read();
-    // TODO: Initialize all required modules
-    // Hints:
-    // - stdio_init_all() for UART
-    // - uart_init() with proper parameters
-    // - Set GPIO functions for UART pins
-    // - Initialize LED and switch modules
-    // - Initialize debounce modules
-    // - Read initial timer values
+    
+    // Seed random number generator
+    srand(timer_read());
 }
 
 int main()
 {
     initializeStuff();
-
-    // TODO: Set initial state for the state machine
     PONG_State = Init;
-    uint8_t t1 = timer_read();
-    uint8_t t4 = timer_read();
-    while (1)
-    {
-        t2 = timer_read();
-        if(t1-t2 >= DEBOUNCE_PD_MS) {
+    
+    lastDebounceTime = timer_read();
+    lastGameTime = timer_read();
+    
+    printf("1D Pong Game Starting...\n");
+    
+    while (1) {
+        uint32_t currentTime = timer_read();
+        
+        // Handle debouncing every DEBOUNCE_PD_MS
+        if (timer_elapsed_ms(lastDebounceTime, currentTime) >= DEBOUNCE_PD_MS) {
             debounce_sw1_tick();
             debounce_sw2_tick();
-            SW2 = debounce_sw2_pressed();
-            SW1 = debounce_sw1_pressed();
-            t1=t2;
+
+            // SW1 = !gpio_get(16);
+            // SW2 = !gpio_get(17);
+            lastDebounceTime = currentTime;
         }
-        // if(sw_in_read1()){ //if button pressed, set true for 50ms
-        //     SW1=0x01;
-        //     uint32_t startTime=timer_read();
-        //     while(1){ //if pushed, stall for 50ms
-        //         if(timer_read()-startTime>50) break;
-        //     }
-        // }
-        // if(sw_in_read2()){ //if button pressed, set true for 50ms
-        //     SW2=0x01;
-        //     uint32_t startTime=timer_read();
-        //     while(1){ //if pushed, stall for 50ms
-        //         if(timer_read()-startTime>50) break;
-        //     }
-        if(t4-t2 >= gameTimer) {
+            if(debounce_sw1_pressed()) {
+                SW1 = 1;
+            } else {
+                SW1 = 0;
+            }
+            if(debounce_sw2_pressed()){
+                 SW2 = 1;
+            }else {
+                SW2 = 0;
+            }
+          
+        // Handle game state machine every gameDelay ms
+        if (timer_elapsed_ms(lastGameTime, currentTime) >= gameDelay) {
             tick();
-            t4=t2;
-            printf("LedsStates %d", ledsStates);
-        }
-        // printf("SW1 ");
-        // printf(SW1);
-        // printf("\n SW2 ");
-        // printf(SW2);
-        // printf("\n");
-        
+            printf("%d, %d - %d, %d - %d, %d - ", SW1, SW2, !gpio_get(16), !gpio_get(17),debounce_sw1_pressed(),debounce_sw2_pressed());
+            lastGameTime = currentTime;
         }
         
-        //SW1=0x00;SW2=0x00;
-
-        // Button Debounce Code - TODO: Implement debounce timing
-        // Hints:
-        // - Read current time with timer_read()
-        // - Check if DEBOUNCE_PD_MS has elapsed
-        // - If so, call debounce tick functions
-
-        // Game State Machine Timing - TODO: Implement game timing
-        // Hints:
-        // - Read current time
-        // - Check if gameTimer milliseconds have elapsed
-        // - If so, call tick() function
-        // - Update timer reference
     }
-
-/*
- * IMPLEMENTATION HINTS AND REQUIREMENTS:
- *
- * 1. State Machine Design:
- *    - Init: Random player assignment and setup
- *    - Serve: Wait for serving player button press
- *    - Travel: Move ball across LEDs
- *    - Thwack: Handle ball hitting at player's end
- *    - Victory: Flash winner's LED and restart
- *
- * 2. LED Control:
- *    - Use bit patterns: 0x80 = leftmost, 0x01 = rightmost
- *    - Use bit shifting to move the ball: <<1 (left), >>1 (right)
- *    - led_out_write() outputs the pattern to LEDs
- *
- * 3. Timing Requirements:
- *    - Initial game speed: 300ms
- *    - After 3 rounds: 200ms
- *    - After 5 rounds: 100ms
- *    - Debounce timing: DEBOUNCE_PD_MS (25ms)
- *
- * 4. Player Logic:
- *    - PlayerL uses debounce_sw1_pressed()
- *    - PlayerR uses debounce_sw2_pressed()
- *    - Early button press = lose point
- *    - Missing the ball at end = lose point
- *
- * 5. UART Messages:
- *    - "Left Player Serves\n" or "Right Player Serves\n"
- *    - "Left player lost\n" or "Right player lost\n"
- *    - Remove all debug printf statements in final code
- *
- * 6. Victory Animation:
- *    - Flash the WINNING side's LED at least 3 times (per requirement G5)
- *    - Use ledsStatesCounter to control timing
- *    - Alternate between LED on and off states
- */
-
-// Template prepared by Prof. Priyank Kalgaonkar.
+}

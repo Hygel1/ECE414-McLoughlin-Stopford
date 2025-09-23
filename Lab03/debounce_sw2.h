@@ -11,7 +11,7 @@
 #include "pico/stdlib.h"
 
 // use to schedule in main function:
-#define DEBOUNCE_PD_MS 50
+#define DEBOUNCE_PD_MS 25
 
 void debounce_sw2_init();
 

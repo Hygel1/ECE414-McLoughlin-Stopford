@@ -24,7 +24,8 @@ void debounce_sw2_init() {
 }
 
 void debounce_sw2_tick() {
-    bool btn = sw_in_read1();
+    bool btn = sw_in_read2();
+    printf("\nbtn: %d, state: %d, btnp: %d",btn, DB_State, btn_pressed);
     switch(DB_State) {
         case NOPUSH:
             if (btn) DB_State = MAYBEPUSH;
@@ -43,7 +44,9 @@ void debounce_sw2_tick() {
             break;
         case MAYBENOPUSH:
             if (btn) DB_State = PUSHED;
-            else DB_State = NOPUSH;
+            else{ DB_State = NOPUSH;
+                btn_pressed=false;
+            }
             break;
         default:
             DB_State = NOPUSH;
@@ -59,7 +62,7 @@ void debounce_sw2_tick() {
 // been pressed.  Return FALSE until the button is released and pressed again
 bool debounce_sw2_pressed() {
     if (btn_pressed) {
-        btn_pressed = false; 
+        //btn_pressed = false; 
         return true;
     } else return false;
 }
