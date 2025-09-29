@@ -114,6 +114,6 @@ void ts_lcd_init() {
     adc_init();
     tft_init_hw();
     tft_begin();
-    tft_setRotation(3);
+    tft_setRotation(0);
     tft_fillScreen(ILI9340_BLACK);
 }
