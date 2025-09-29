@@ -11,7 +11,6 @@ add_executable(ts_test)
 pico_generate_pio_header(ts_test ${CMAKE_CURRENT_LIST_DIR}/SPIPIO.pio)
 
 target_sources(ts_test PRIVATE 
-    touchscreen_demo.c
     TouchScreen.c
     TFTMaster.c
     glcdfont.c
@@ -19,6 +18,7 @@ ts_lcd.h
 ts_lcd.c
 TFTMaster.h
 TouchScreen.h
+ts_test.c
 
     
     )

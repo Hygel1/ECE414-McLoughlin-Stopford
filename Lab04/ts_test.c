@@ -21,10 +21,11 @@ static uint16_t last_lcdx, last_lcdy; // Store last touch coordinates
 void writeRAWCoor(struct TSPoint p) {
     // TODO: Set cursor position for raw coordinates display
     // HINT: Use tft_setCursor(x, y) - choose visible screen location
-    tft_setCursor(100,100);
+    tft_setTextSize(2);
+    tft_setCursor(10,10);
     // TODO: Set text color for raw coordinates
     // HINT: Use tft_setTextColor(color) - pick a distinctive color
-    tft_setTextcolor(ILI9340_RED);
+    tft_setTextColor(ILI9340_MAGENTA);
     // TODO: Format raw coordinates into buffer1
     // HINT: Use sprintf(buffer1, "x: %d, y: %d, z: %d", p.x, p.y, p.z);
     sprintf(buffer1, "x: %d, y: %d, z: %d", p.x, p.y, p.x);
@@ -36,7 +37,8 @@ void writeRAWCoor(struct TSPoint p) {
 void writeLCDCoor(uint16_t xcoor, uint16_t ycoor) {
     // TODO: Set cursor position for LCD coordinates display
     // HINT: Choose a different location than raw coordinates
-    tft_setCursor(100, 400);
+    tft_setTextSize(2);
+    tft_setCursor(10, 35);
 
     // TODO: Set text color for LCD coordinates  
     // HINT: Use a different color than raw coordinates for clarity
@@ -44,7 +46,7 @@ void writeLCDCoor(uint16_t xcoor, uint16_t ycoor) {
     
     // TODO: Format LCD coordinates into buffer2
     // HINT: sprintf(buffer2, "x: %d, y: %d", xcoor, ycoor);
-    sprintf(buffer2, "x: %d, y: %d, z: %d", p.x, p.y, p.x);
+    sprintf(buffer2, "x: %d, y: %d", xcoor, ycoor);
     tft_writeString(buffer2);
     // TODO: Display the formatted string
 }
@@ -75,17 +77,17 @@ void deleteCrossHair(uint16_t xcoor, uint16_t ycoor) {
     tft_drawPixel(xcoor, ycoor, ILI9340_BLACK);
 }
 
-void clearScreen(uint16_t xcoor, uint16_t ycoor) {
+void clearScreen(char bufferx[30], char buffery[30]) {
     // TODO: Clear the raw coordinates text by overwriting with background color
     // HINT: Set cursor to raw coordinates position, set text color to BLACK, write the old string
-    tft_setCursor(100,100);
-    tft_setTextcolor(ILI9340_BLACK);
-    sprintf(buffer1, "x: %d, y: %d, z: %d", p.x, p.y, p.x);
+    tft_setCursor(10,10);
+    tft_setTextColor(ILI9340_BLACK);
+    //sprintf(buffer1, "x: %d, y: %d, z: %d", p.x, p.y, p.x);
     tft_writeString(buffer1);
     // TODO: Clear the LCD coordinates text similarly
-    tft_setCursor(100,300);
-    tft_setTextcolor(ILI9340_BLACK);
-    sprintf(buffer2, "x: %d, y: %d, z: %d", p.x, p.y, p.x);
+    tft_setCursor(10, 35);
+    tft_setTextColor(ILI9340_BLACK);
+    //sprintf(buffer2, "x: %d, y: %d, z: %d", p.x, p.y, p.x);
     tft_writeString(buffer2);
     // TODO: Erase the previous crosshair
     // HINT: Call deleteCrossHair with the last known coordinates
@@ -106,9 +108,6 @@ int main() {
         // TODO: Get raw touchscreen coordinates
         // HINT: Create a TSPoint struct and call getPoint(&p)
         struct TSPoint p;
-        p.x = 0;
-        p.y = 0;
-        p.z = 0;
         getPoint(&p);
         // TODO: Display raw coordinates on screen
         // HINT: Call writeRAWCoor with the point data
@@ -117,14 +116,14 @@ int main() {
         uint16_t lcdx, lcdy;
         // HINT: Call get_ts_lcd(&lcdy, &lcdx) - note the parameter order!
         // HINT: Store the return value to know if screen is touched
-        screenTouched = get_ts_lcd(&lcdx, &lcdy);
+        screenTouched = get_ts_lcd(&lcdy, &lcdx);
         // TODO: Update last coordinates if screen is currently touched
         if (screenTouched) {
             firstscreenTouched = true;
             // HINT: Set first touch flag to true
             // HINT: Update last_lcdx and last_lcdy with current coordinates
-            last_lcdx = p.x;
-            last_lcdy = p.y;
+            last_lcdx = lcdx;
+            last_lcdy = lcdy;
         }
         
         // TODO: Display last coordinates and crosshair if screen has ever been touched
