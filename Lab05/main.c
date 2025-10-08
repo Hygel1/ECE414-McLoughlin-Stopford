@@ -5,6 +5,13 @@
 #include "hardware/uart.h"
 #include <stdio.h>
 // === TODO: === Define states here
+
+#define UART_ID uart0
+#define BAUD_RATE 115200
+
+// UART pin definitions
+#define UART_TX_PIN 0
+#define UART_RX_PIN 1
 enum CALC_STATES
 {
     CALC_INIT, CALC_FIRST_NUM, CALC_OPERATOR, CALC_SECOND_NUM, CALC_SHOW_RESULT// Start state
@@ -27,6 +34,7 @@ int main()
     {
         uint16_t touch_x, touch_y;
         bool touched = get_ts_lcd(&touch_x, &touch_y);
+        printf("x = %d, y = %d\n", touch_x, touch_y);
         Buttons pressedButton = BERR;
         if (touched)
         {
@@ -46,6 +54,7 @@ int main()
             break;
 
         case CALC_FIRST_NUM:
+        printf("%d", pressedButton);
             if (pressNumber(pressedButton))
             {
                 num1 = getInput(pressedButton);
@@ -66,6 +75,7 @@ int main()
             break;
 
         case CALC_OPERATOR:
+        printf("%d", pressedButton);
             if (pressNumber(pressedButton))
             {
                 num2 = getInput(pressedButton);
@@ -81,6 +91,7 @@ int main()
             break;
 
         case CALC_SECOND_NUM:
+        printf("%d", pressedButton);
             if (pressNumber(pressedButton))
             {
                 num2 = getInput(pressedButton);
@@ -89,6 +100,8 @@ int main()
             else if (pressEq(pressedButton))
             {
                 result = performOperation(num1, num2, currentOp);
+                //if(num2==0&&currentOp==DIV) displayResult("ERROR");
+                //else 
                 displayResult(result);
                 CALC_State = CALC_SHOW_RESULT;
             }
@@ -101,6 +114,7 @@ int main()
             break;
 
         case CALC_SHOW_RESULT:
+        printf("%d", pressedButton);
             if (pressC(pressedButton))
             {
                 clear();

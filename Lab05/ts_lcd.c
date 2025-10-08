@@ -83,7 +83,7 @@ bool get_ts_lcd(uint16_t *px, uint16_t *py) {
     
     // Apply interpolation
     uint16_t lcd_x = linear_interpolate(p.x, TS_MIN_X, TS_MAX_X, 0, ADAFRUIT_LCD_MAX_X);
-    uint16_t lcd_y = linear_interpolate(p.y, TS_MIN_Y, TS_MAX_Y, ADAFRUIT_LCD_MAX_Y, 0);
+    uint16_t lcd_y = linear_interpolate(p.y, TS_MIN_Y, TS_MAX_Y,0, ADAFRUIT_LCD_MAX_Y);
     
     *px = lcd_x;
     *py = lcd_y;

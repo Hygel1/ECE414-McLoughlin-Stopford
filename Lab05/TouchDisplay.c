@@ -3,16 +3,16 @@
 #include "ts_lcd.h"
 #include <stdio.h>
 // === TODO: === Define button positions (4x4 grid). Below is an example.
-#define BUTTON_WIDTH 70
+#define BUTTON_WIDTH 40
 #define BUTTON_HEIGHT 50
 #define COL1_X 20
-#define COL2_X 100
-#define COL3_X 180
-#define COL4_X 260
+#define COL2_X 70
+#define COL3_X 120
+#define COL4_X 170
 #define ROW1_Y 60
 #define ROW2_Y 120
 #define ROW3_Y 180
-#define ROW4_Y 240
+#define ROW4_Y 240 
 static char displayBuffer[20];
 void drawCalcScreen()
 {
@@ -24,85 +24,85 @@ void drawCalcScreen()
 
     // === TODO: === Draw number buttons 1-9 in 3x3 grid
     // Button 1
-    tft_fillRect(COL1_X, ROW1_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_BLUE);
-    tft_setCursor(COL1_X + 25, ROW1_Y + 15);
+    tft_fillRect(COL1_X, ROW1_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_WHITE);
+    tft_setCursor(COL1_X + 20, ROW1_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("1");
 
     // === TODO: === Add buttons 2-9 following same pattern
     tft_fillRect(COL2_X, ROW1_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_WHITE);
-    tft_setCursor(COL2_X + 25, ROW1_Y + 15);
+    tft_setCursor(COL2_X + 20, ROW1_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("2");
 
     tft_fillRect(COL3_X, ROW1_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_WHITE);
-    tft_setCursor(COL3_X + 25, ROW1_Y + 15);
+    tft_setCursor(COL3_X + 20, ROW1_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("3");
 
     tft_fillRect(COL1_X, ROW2_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_WHITE);
-    tft_setCursor(COL1_X + 25, ROW2_Y + 15);
+    tft_setCursor(COL1_X + 20, ROW2_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("4");
 
     tft_fillRect(COL2_X, ROW2_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_WHITE);
-    tft_setCursor(COL2_X + 25, ROW2_Y + 15);
+    tft_setCursor(COL2_X + 20, ROW2_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("5");
 
     tft_fillRect(COL3_X, ROW2_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_WHITE);
-    tft_setCursor(COL3_X + 25, ROW2_Y + 15);
+    tft_setCursor(COL3_X + 20, ROW2_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("6");
 
     tft_fillRect(COL1_X, ROW3_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_WHITE);
-    tft_setCursor(COL1_X + 25, ROW3_Y + 15);
+    tft_setCursor(COL1_X + 20, ROW3_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("7");
 
     tft_fillRect(COL2_X, ROW3_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_WHITE);
-    tft_setCursor(COL2_X + 25, ROW3_Y + 15);
+    tft_setCursor(COL2_X + 20, ROW3_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("8");
 
     tft_fillRect(COL3_X, ROW3_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_WHITE);
-    tft_setCursor(COL3_X + 25, ROW3_Y + 15);
+    tft_setCursor(COL3_X + 20, ROW3_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("9");
     // Button 0, C, = in bottom row
     tft_fillRect(COL1_X, ROW4_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_WHITE);
-    tft_setCursor(COL1_X + 25, ROW4_Y + 15);
+    tft_setCursor(COL1_X + 20, ROW4_Y + 15);
     tft_setTextColor(ILI9340_BLACK);//tft_setTextColor(ILI9340_WHITE);
     tft_writeString("0");
 
     // === TODO: === Add C, =, and operator buttons
     tft_fillRect(COL2_X, ROW4_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_RED);
-    tft_setCursor(COL2_X + 25, ROW4_Y + 15);
+    tft_setCursor(COL2_X + 20, ROW4_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("C");
 
     tft_fillRect(COL3_X, ROW4_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_BLUE);
-    tft_setCursor(COL3_X + 25, ROW4_Y + 15);
+    tft_setCursor(COL3_X + 20, ROW4_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("=");
 
     tft_fillRect(COL4_X, ROW4_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_YELLOW);
-    tft_setCursor(COL4_X + 25, ROW4_Y + 15);
+    tft_setCursor(COL4_X + 20, ROW4_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("/");
 
     tft_fillRect(COL4_X, ROW3_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_YELLOW);
-    tft_setCursor(COL4_X + 25, ROW3_Y + 15);
+    tft_setCursor(COL4_X + 20, ROW3_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("x");
 
     tft_fillRect(COL4_X, ROW2_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_YELLOW);
-    tft_setCursor(COL4_X + 25, ROW2_Y + 15);
+    tft_setCursor(COL4_X + 20, ROW2_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("-");
 
     tft_fillRect(COL4_X, ROW1_Y, BUTTON_WIDTH, BUTTON_HEIGHT, ILI9340_YELLOW);
-    tft_setCursor(COL4_X + 25, ROW1_Y + 15);
+    tft_setCursor(COL4_X + 20, ROW1_Y + 15);
     tft_setTextColor(ILI9340_BLACK);
     tft_writeString("+");
 }
@@ -213,7 +213,7 @@ Buttons getButton(uint16_t x, uint16_t y)
 
 void displayResult(int32_t num)
 {
-    tft_fillRect(10, 10, 300, 40, ILI9340_CYAN);
+    tft_fillRect(10, 10, 300, 40, ILI9340_BLACK);
     tft_setCursor(15, 20);
     tft_setTextColor(ILI9340_WHITE);
     sprintf(displayBuffer, "%ld", num);
@@ -221,7 +221,7 @@ void displayResult(int32_t num)
 }
 void displayError()
 {
-    tft_fillRect(10, 10, 300, 40, ILI9340_CYAN);
+    tft_fillRect(10, 10, 300, 40, ILI9340_BLACK);
     tft_setCursor(15, 20);
     tft_setTextColor(ILI9340_RED);
     tft_writeString("ERROR");

@@ -35,6 +35,9 @@ int32_t getInput(Buttons button)
     case B7:
         currentInput=currentInput*10+7;
         break;
+    case B8:
+        currentInput=currentInput*10+8;
+        break;
     case B9:
         currentInput=currentInput*10+9;
         break;
@@ -77,8 +80,12 @@ int32_t performOperation(int32_t num1, int32_t num2, OPERATOR op)
         return num1*num2;
         break;
     case DIV:
-        if(num2==0) return 0;
-        return num1/num2;
+        if(num2==0){ 
+            displayError();
+            sleep_ms(1000);
+            return 0;
+        }
+        else return num1/num2;
         break;
     // === TODO: === Write remaining basic operations
     // *** HINT: *** Use if condition to handle divide by zero case
