@@ -9,6 +9,8 @@ pico_sdk_init()
 add_executable(FinalProjTestFiles
         main.c  
 	pwm_pin.c
+	getPWM.c
+timer.c
 )
 
 
