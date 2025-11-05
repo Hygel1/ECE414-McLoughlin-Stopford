@@ -18,7 +18,7 @@ int main() {
     printf("Starting");
     pwm_pin_init(0x8000);
     uint16_t inPins[] = {19, 20, 21, 22, 26, 27};
-    uint32_t* duties = get_duty(pin);
+    uint32_t *duties = get_duty(pin);
     while(1) {
         duties = get_duty(inPins);
         //PWM for 0-180 servoes us 50Hz
