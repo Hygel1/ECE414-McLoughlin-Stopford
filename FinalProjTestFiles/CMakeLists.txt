@@ -23,4 +23,3 @@ target_link_libraries(FinalProjTestFiles
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(FinalProjTestFiles)
-
