@@ -14,8 +14,8 @@
 #define PWM_PIN 14
 
 // Initialize pin 24 as a basic PWM output
-void pwm_pin_init(uint16_t level);
+void pwm_pin_init(uint16_t level, uint16_t inPin);
 
 // Set the level where output changes from 1 to 0
-void pwm_pin_set_level(uint16_t level);
+void pwm_pin_set_level(uint16_t level, uint16_t inPin);
 
