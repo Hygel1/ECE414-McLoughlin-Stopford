@@ -18,15 +18,11 @@ int main() {
     stdio_init_all();
     
     printf("Starting");
-    for(int i = 10; i <16; i++) {
-        gpio_set_function(i, GPIO_FUNC_PWM);
-    }
-    uint16_t outPins[] = {10, 11, 12, 13, 14, 15};
-    uint16_t inPins[] = {19, 20, 21, 22, 26, 27};
+    uint16_t outPins[] = {15, 19, 21, 27, 29, 16};
+    uint16_t inPins[] = {4, 6, 8, 10, 12, 14};
     uint16_t inPins2[] = {4, 5, 6, 7, 8, 9};
     for(int i =0; i <6; i++) {
-        pwm_pin_init(0x8000, outPins[i]);
-        pwm_init(pwm_gpio_to_slice_num(outPins[i]),0x0000, 1); //this is probably not right https://www.raspberrypi.com/documentation/pico-sdk/hardware.html#group_hardware_pwm
+        pwm_pin_init(0x8000, outPins[i],i);
     }
     uint32_t *duties = get_duty(inPins);
     uint32_t *duties2 = get_duty2(inPins2);
@@ -42,8 +38,10 @@ int main() {
         //for(i=0;i<6;i++) input[i]=(uint16_t)(duties[i]*163.83); //set input values from read pwm signal
         for(int i=0;i<6;i++) input[i]=(uint16_t)(duties[i]*.002*0xFFFF); //set input values from read pwm signal
         for(int i=0;i<6;i++) input2[i]=(uint16_t)(duties2[i]*.002*0xFFFF); //set input values from read pwm signal
-        for(int i = 0; i < 6; i++) {
-            pwm_pin_set_level(input[0], outPins[i]);
+        for(uint16_t i = 0; i < 6; i++) {
+            pwm_pin_set_level(input[i], outPins[i],i);
+            //pwm_pin_set_level(input[0], outPins[i]);
+            //pwm_set_gpio_level(outPins[i], input[0]);
         }
         //pwm_pin_set_level(input[0], outPins[4]);
         for(int i = 0; i < 6; i++) {

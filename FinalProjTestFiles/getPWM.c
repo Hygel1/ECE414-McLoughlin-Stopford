@@ -3,7 +3,7 @@
 #include "stdint.h"
 #include "stdbool.h"
 #include "getPWM.h"
-#include "hardware/pwn.h"
+#include "hardware/pwm.h"
 
 #define UART_ID uart0
 #define BAUD_RATE 115200
@@ -80,7 +80,7 @@ uint32_t* get_duty2(uint16_t pin[]) {
 
  void assign_pwm(int pin[], int value) {
     
-    pwm_pin_set_level(pwm_level)
+    //pwm_pin_set_level(pwm_level);
     
     
  }
