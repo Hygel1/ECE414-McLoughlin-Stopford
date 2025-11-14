@@ -22,7 +22,7 @@ static uint slice_num[6];
 void pwm_pin_init(uint16_t level, uint16_t outPin,uint16_t i) {
     gpio_set_function(outPin, GPIO_FUNC_PWM);
     slice_num[i] = pwm_gpio_to_slice_num(outPin);
-    pwm_set_clkdiv(slice_num[i], 1.9375);  
+    pwm_set_clkdiv(slice_num[i], 1.9375*20);  
     pwm_set_wrap(slice_num[i], 0xffff);
     //Odd GPIO pins are on channel B, evens on on channel A
     if((outPin%2==0)){
