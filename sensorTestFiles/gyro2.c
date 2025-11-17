@@ -201,7 +201,7 @@ void i2c_read_multi(uint8_t start_reg, uint8_t *buffer, uint8_t len) {
     i2c_read_blocking(I2C_PORT, LSM6DSOX_ADDR, buffer, len, false);
 }
 
-int16_t combine_bytes(uint8_t low, uint8_t high) {
+int16_t concatenate(uint8_t low, uint8_t high) {
     return (int16_t)((high << 8) | low);
 }
 
@@ -238,15 +238,15 @@ int main() {
         i2c_read_multi(REG_OUTX_L_A, accel, 6);
         i2c_read_multi(REG_OUTX_L_G, gyro, 6);
         i2c_read_multi(REG_OUT_TEMP, temp, 2);
-        int16_t x = combine_bytes(accel[0], accel[1]);
-        int16_t y = combine_bytes(accel[2], accel[3]);
-        int16_t z = combine_bytes(accel[4], accel[5]);
+        int16_t x = concatenate(accel[0], accel[1]);
+        int16_t y = concatenate(accel[2], accel[3]);
+        int16_t z = concatenate(accel[4], accel[5]);
 
-        int16_t gX = combine_bytes(gyro[0], gyro[1]);
-        int16_t gY = combine_bytes(gyro[2], gyro[3]);
-        int16_t gZ = combine_bytes(gyro[4], gyro[5]);
+        int16_t gX = concatenate(gyro[0], gyro[1]);
+        int16_t gY = concatenate(gyro[2], gyro[3]);
+        int16_t gZ = concatenate(gyro[4], gyro[5]);
 
-        int16_t t = combine_bytes(temp[0], temp[1]);
+        int16_t t = concatenate(temp[0], temp[1]);
         // Convert to g's (for ±4g, sensitivity = 0.122 mg/LSB)
 
         float accel_x = x * 0.000122f;
