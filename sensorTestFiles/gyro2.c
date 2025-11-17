@@ -259,7 +259,7 @@ int main() {
 
         printf("Accel: X=%.3fg Y=%.3fg Z=%.3fg\n", accel_x, accel_y, accel_z);
         printf("Gyro: X=%.3f°/s Y=%.3f°/s Z=%.3f°/s\n", gyro_x, gyro_y, gyro_z);
-        printf("Temperature: %2.2f degrees");
+        //printf("Temperature: %2.2f degrees");
         sleep_ms(100);
     }
 }

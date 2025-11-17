@@ -10,7 +10,9 @@ add_executable(FinalProjTestFiles
         main.c  
 	pwm_pin.c
 	getPWM.c
-timer.c
+        timer.c
+        control.c
+        gyro.h
 )
 
 
