@@ -7,8 +7,7 @@ project(sensorTestFiles)
 pico_sdk_init()
 
 add_executable(sensorTestFiles
-        gyro2.c  
-	
+        main.c  
 )
 
 # pull in common dependencies
@@ -17,6 +16,9 @@ target_link_libraries(sensorTestFiles
         pico_stdlib
         pico_bootsel_via_double_reset
 	hardware_uart
+	BMP5_SensorAPI-master/bmp5.h
+	BMP5_SensorAPI-master/bmp5_defs.h
+	baro.h
 )
 
 # create map/bin/hex file etc.

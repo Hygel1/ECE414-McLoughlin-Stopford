@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "hardware/i2c.h"
+#include "coines.h"
 #include "bmp5_defs.h"
 
 /******************************************************************************/
@@ -36,7 +36,7 @@ BMP5_INTF_RET_TYPE bmp5_i2c_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t l
 
     (void)intf_ptr;
 
-    return i2c_read_blocking(COINES_I2C_BUS_0, device_addr, reg_addr, reg_data, (uint16_t)length);
+    return coines_read_i2c(COINES_I2C_BUS_0, device_addr, reg_addr, reg_data, (uint16_t)length);
 }
 
 /*!
