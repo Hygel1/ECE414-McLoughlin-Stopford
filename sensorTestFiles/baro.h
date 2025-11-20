@@ -1,3 +1,10 @@
+#include "pico/stdlib.h"
+#include "hardware/i2c.h"
+#include <stdio.h>
+#include "hardware/uart.h"
+#include "BMP5_SensorAPI-master/bmp5.h"
+#include "BMP5_SensorAPI-master/bmp5_defs.h"
+
 #define BMP5_I2C_ADDR 0x76
 
 int8_t bmp5_i2c_read(uint8_t reg_addr, uint8_t *data, uint32_t len, void *intf_ptr);
