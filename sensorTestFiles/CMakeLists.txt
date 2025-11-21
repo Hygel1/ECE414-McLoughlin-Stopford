@@ -9,6 +9,7 @@ pico_sdk_init()
 add_executable(sensorTestFiles
         main.c
 	baro.c
+	gyro.c
 	BMP5_SensorAPI-master/bmp5.c  
 )
 
