@@ -12,9 +12,9 @@ add_executable(FinalProjTestFiles
 	getPWM.c
         timer.c
         control.c
-        gyro.c
 	baro.c
-	libraries/BMP5_SensorAPI-master/bmp5.c  
+        gyro.c
+	BMP5_SensorAPI-master/bmp5.c  
 )
 
 
@@ -24,6 +24,7 @@ target_link_libraries(FinalProjTestFiles
         pico_stdlib
         pico_bootsel_via_double_reset
 	hardware_i2c
+	hardware_uart
 )
 
 # create map/bin/hex file etc.

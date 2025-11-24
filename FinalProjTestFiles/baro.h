@@ -2,8 +2,8 @@
 #include "hardware/i2c.h"
 #include <stdio.h>
 #include "hardware/uart.h"
-#include "libraries/BMP5_SensorAPI-master/bmp5.h"
-#include "libraries/BMP5_SensorAPI-master/bmp5_defs.h"
+#include "BMP5_SensorAPI-master/bmp5.h"
+#include "BMP5_SensorAPI-master/bmp5_defs.h"
 
 #define BMP5_I2C_ADDR 0x47
 

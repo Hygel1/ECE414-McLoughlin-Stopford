@@ -45,7 +45,7 @@ int16_t combine_bytes(uint8_t low, uint8_t high) {
 }
 bool init(){
     
-    stdio_init_all();
+    //stdio_init_all();
     i2c_init(I2C_PORT, 400 * 1000);
     gpio_set_function(SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(SCL_PIN, GPIO_FUNC_I2C);

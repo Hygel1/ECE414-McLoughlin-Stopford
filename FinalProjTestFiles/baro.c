@@ -2,9 +2,8 @@
 #include "hardware/i2c.h"
 #include <stdio.h>
 #include "hardware/uart.h"
-
-#include "libraries/BMP5_SensorAPI-master/bmp5.h"
-#include "libraries/BMP5_SensorAPI-master/bmp5_defs.h"
+#include "BMP5_SensorAPI-master/bmp5.h"
+#include "BMP5_SensorAPI-master/bmp5_defs.h"
 #include "baro.h"
 #include <string.h>
 #include <math.h>
@@ -58,8 +57,9 @@ void delay_us(uint32_t period, void *intf_ptr)
 }
 
 void initBaro() {
-    
     stdio_init_all();
+
+    //Init I2C
     i2c_init(I2C_PORT, 400 * 1000);
     gpio_set_function(SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(SCL_PIN, GPIO_FUNC_I2C);
