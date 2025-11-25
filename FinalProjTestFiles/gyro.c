@@ -43,7 +43,7 @@ void i2c_read_multi(uint8_t start_reg, uint8_t *buffer, uint8_t len) {
 int16_t combine_bytes(uint8_t low, uint8_t high) {
     return (int16_t)((high << 8) | low);
 }
-bool init(){
+bool initGyro(){
     
     //stdio_init_all();
     i2c_init(I2C_PORT, 400 * 1000);
@@ -77,6 +77,22 @@ struct Output readGyro(){
         out.readOut[6] = combine_bytes(temp[0], temp[1]);
 
         return out;
+}
+float gyroOutVals[3]; //used for both accel and gyro individual outputs
+float *readAccel(){
+    unit8_t accel[6];
+    i2c_read_multi(REG_OUTX_L_A, accel, 6);
+    gyroOutVals[0]=combineBytes(accel[0],accel[1])*.000122f; //x
+    gyroOutVals[1]=combineBytes(accel[2],accel[3])*.000122f; //y
+    gyroOutVals[2]=combineBytes(accel[4],accel[5])*.000122f; //z
+    return gyroOutVals; //[x,y,z]
+}
+float *readGyroVals(){
+    unit8_t gyro[6];
+    i2c_read_multi(REG_OUTX_L_G, gyro, 6);
+    gyroOutVals[0]=combineBytes(gyro[0],gyro[1])*.000122f; //x
+    gyroOutVals[1]=combineBytes(gyro[2],gyro[3])*.000122f; //y
+    gyroOutVals[2]=combineBytes(gyro[4],gyro[5])*.000122f; //z
 }
 
 

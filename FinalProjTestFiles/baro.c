@@ -116,3 +116,14 @@ void readBaro() {
     printf("Temp = %.2f C  Pressure = %.2f Pa Altitude = %.2f\n", data.temperature, data.pressure, alt);
     sleep_ms(250);
 }
+
+uint32_t getAltitude(){
+    bmp5_get_sensor_data(&data, &config, &dev);
+    float alt = 145366.45*(1-pow((data.pressure/100/1013.25), .190284));
+    return (uint32_t) alt;
+}
+
+uint32_t getPress(){
+    bmp5_get_sensor_data(&data, &config, &dev);
+    return (uint32_t) data.pressure;
+}

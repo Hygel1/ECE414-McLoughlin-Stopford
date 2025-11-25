@@ -14,8 +14,7 @@
 // UART pin definitions
 #define UART_TX_PIN 0
 #define UART_RX_PIN 1
-
-
+uint16_t inputsCorrected[6];
 int main() {
     stdio_init_all();
     uint16_t outPins[] = {15, 19, 21, 27, 29, 16};// {prop, L_aileron, R_aileron, elevator, nc, nc}
@@ -26,25 +25,35 @@ int main() {
     }
     uint32_t *duties = get_duty(inPins);
     uint16_t *outStage=translate(nothing); //initial set, never used
+    uint16_6 *smoothOut;
     uint16_t input[6];
         struct Output outGyro;
-    init();
+    initGyro();
     initBaro();
+    uint32_t lastTimeRead=timer_read(); //used to track acceleration for speed calculation
+    unti32_t speedVal; //initial speed must be 0 on boot
+    int32_t accelVals[6]={0,0,0,0,0,0};
+    int32_t angles[3]={0,0,0};
     while(1) {
+        accelVals=updateAccelVals(lastTimeRead,accelVals); //[Vx,Vy,Vz, Dx,Dy,Dz]
+        angles=updateGyroVals(lastTimeRead, angles); //[Ax,Ay,Az]
+        lastTimeRead=timer_read(); //reads current time in us
+        //take input values and translate according to output pin configuration
         duties = get_duty(inPins);
-        outStage = translate(duties);
-        for(int i=0;i<6;i++) input[i]=(uint16_t)((outStage[i]/4*.05+5)/100*0xffff); //set input values from read pwm signal
-        for(uint8_t i = 0; i < 6; i++) {
+        outStage = translate(duties); //values at this point are still from 0-400
+        outStage = guiderail(outStage, angles,accelVals,0); //use guiderail function to correct values accordingly
+        //at this point, outStage is the 'most aggressive' version of the user's intended maneuver
+        smoothOut = smoothTransition(smoothOut,outStage); //slows down output controls to ensure that the user doesn't try to shift things too quickly
+        //^^ smoothout array will always hold the latest outputted control array until this point
+
+
+        //translate from 0-400 easy math values to pwm write range
+        for(int i=0;i<6;i++) input[i]=(uint16_t)((smoothOut[i]/4*.05+5)/100*0xffff);
+        for(uint8_t i = 0; i < 6; i++) { //output pwm values
             pwm_pin_set_level(input[i], outPins[i],i);
         }
-        //pwm_pin_set_level(input[0], outPins[4]);
-        for(int i = 0; i < 6; i++) {
-            printf("%d, ", outStage[i]);
-        }
-        printf("\n");
-        // for(int i = 0; i < 6; i++) {
-        //     printf("%d, ", input2[i]);
-        // }
+
+        //testing...
         printf("\n");
         readBaro();
         outGyro = readGyro();
