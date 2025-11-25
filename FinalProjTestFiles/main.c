@@ -41,17 +41,11 @@ int main() {
         //take input values and translate according to output pin configuration
         duties = get_duty(inPins);
         outStage = translate(duties); //values at this point are still from 0-400
-        outStage = guiderail(outStage, angles,accelVals,0); //use guiderail function to correct values accordingly
+        outStage = guiderail(outStage,angles,accelVals,0); //use guiderail function to correct values accordingly
         //at this point, outStage is the 'most aggressive' version of the user's intended maneuver
         smoothOut = smoothTransition(smoothOut,outStage); //slows down output controls to ensure that the user doesn't try to shift things too quickly
         //^^ smoothout array will always hold the latest outputted control array until this point
-
-
-        //translate from 0-400 easy math values to pwm write range
-        for(int i=0;i<6;i++) input[i]=(uint16_t)((smoothOut[i]/4*.05+5)/100*0xffff);
-        for(uint8_t i = 0; i < 6; i++) { //output pwm values
-            pwm_pin_set_level(input[i], outPins[i],i);
-        }
+        setAllPWM(smoothOut,outPins); //method located in controls file
 
         //testing...
         printf("\n");

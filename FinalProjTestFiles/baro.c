@@ -123,7 +123,7 @@ uint32_t getAltitude(){
     return (uint32_t) alt;
 }
 
-uint32_t getPress(){
+uint64_t getPress(){
     bmp5_get_sensor_data(&data, &config, &dev);
-    return (uint32_t) data.pressure;
+    return data.pressure;
 }
