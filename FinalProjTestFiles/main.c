@@ -35,8 +35,8 @@ int main() {
     int32_t accelVals[6]={0,0,0,0,0,0};
     int32_t angles[3]={0,0,0};
     while(1) {
-        accelVals=updateAccelVals(lastTimeRead,accelVals); //[Vx,Vy,Vz, Dx,Dy,Dz]
         angles=updateGyroVals(lastTimeRead, angles); //[Ax,Ay,Az]
+        accelVals=updateAccelVals(lastTimeRead,accelVals,angles); //[Vx,Vy,Vz, Dx,Dy,Dz]
         lastTimeRead=timer_read(); //reads current time in us
         //take input values and translate according to output pin configuration
         duties = get_duty(inPins);

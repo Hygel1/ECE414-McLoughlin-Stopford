@@ -96,7 +96,7 @@ uint16_t *smoothTransition(uint16_t currentState[], uint16_t desiredPoint[]){
     }
     return guiderailOutput; //using same guiderail output for this method since no memory between function is required for either method
 }
-// [Ax,Ay,Az]
+// [roll, pitch, yaw]
 int32_t *updateGyroVals(unt32_t lastTime,int32_t lastVals[]){
     float gyroHold=readGyroVals();
     for(int i=0;i<3;i++){
@@ -106,13 +106,25 @@ int32_t *updateGyroVals(unt32_t lastTime,int32_t lastVals[]){
     return angleVals;
 }
 // [Vx,Vy,Vz,Dx,Dy,Dz]
-int32_t *updateAccelVals(uint32_t lastTime,int32_t lastVals[]){
+int32_t *updateAccelVals(uint32_t lastTime,int32_t lastVals[],int32_t angles[]){
     //take accel value and time interval since last read and use to estimate speed change since last read
-    float accelHold=readAccel(); //accelerometer reads in g
+    float accelHold[]=readAccel(); //accelerometer reads in g
+    uint32_t timeInterval=(timerRead()-lastTime)*1000000;
+    int32_t interm[6];
     for(int i=0;i<3;i++){ //0-2 speed values, 3-5 position values
-        accelVals[i]=lastVals[i]+accelHold[i]/9.81*((timer_read()-lastTime)*1000000); //can convert from m/s to mph or something
-        accelVals[i+3]=lastVals[i+3]+accelVals[i]*((timer_read()-lastTime)*1000000);
-    } //values
+        //these equations should be updated to consider the roll and pitch angles of the plane
+        interm[i]=lastVals[i]+accelHold[i]/9.81*(timeInterval); //can convert from m/s to mph or something
+        interm[i+3]=lastVals[i+3]+accelHold[i]/9.81*(timeInterval*timeInterval); //percieved distance calc
+    } //theta=roll=angles[0], alpha=pitch=angles[1], beta=yaw=angles[2]  - accelHold=deltaVals
+    //modify 
+    accelVals[0]=lastVals[0]+interm[0]*(cos(angles[1])+cos(angles[2]));
+    accelVals[3]=lastVals[3]+interm[3]*(cos(angles[1])+cos(angles[2]));
+
+    accelVals[1]=lastVals[1]+interm[0]*sin(angles[2])+interm[1]*cos(angles[0])+interm[2]*cos(3.14159/2-angles[0]);
+    accelVals[4]=lastVals[4]+interm[3]*sin(angles[2])+interm[4]*cos(angles[0])+interm[5]*cos(3.14159/2-angles[0]);
+    
+    accelVals[2]=lastVals[2]+interm[0]*sin(angles[1])+interm[1]*sin(angles[0])+interm[2]*sin(angles(3.14159/2-angles[0]));
+    accelVals[5]=lastVals[5]+interm[3]*sin(angles[1])+interm[4]*sin(angles[0])+interm[5]*sin(angles(3.14159/2-angles[0]));
     return accelVals;
 }
 /**
