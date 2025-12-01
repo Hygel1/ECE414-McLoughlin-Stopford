@@ -11,6 +11,6 @@ uint8_t i2c_read_reg(uint8_t reg);
 void i2c_read_multi(uint8_t start_reg, uint8_t *buffer, uint8_t len);
 int16_t combine_bytes(uint8_t low, uint8_t high);
 int primary();
-bool init();
+bool initGyro();
 struct Output readGyro();
 uint16_t readTemp();

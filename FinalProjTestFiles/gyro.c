@@ -80,19 +80,19 @@ struct Output readGyro(){
 }
 float gyroOutVals[3]; //used for both accel and gyro individual outputs
 float *readAccel(){
-    unit8_t accel[6];
+    uint8_t accel[6];
     i2c_read_multi(REG_OUTX_L_A, accel, 6);
-    gyroOutVals[0]=combineBytes(accel[0],accel[1])*.000122f; //x
-    gyroOutVals[1]=combineBytes(accel[2],accel[3])*.000122f; //y
-    gyroOutVals[2]=combineBytes(accel[4],accel[5])*.000122f; //z
+    gyroOutVals[0]=combine_bytes(accel[0],accel[1])*.000122f; //x
+    gyroOutVals[1]=combine_bytes(accel[2],accel[3])*.000122f; //y
+    gyroOutVals[2]=combine_bytes(accel[4],accel[5])*.000122f; //z
     return gyroOutVals; //[x,y,z]
 }
 float *readGyroVals(){
-    unit8_t gyro[6];
+    uint8_t gyro[6];
     i2c_read_multi(REG_OUTX_L_G, gyro, 6);
-    gyroOutVals[0]=combineBytes(gyro[0],gyro[1])*.000122f; //x
-    gyroOutVals[1]=combineBytes(gyro[2],gyro[3])*.000122f; //y
-    gyroOutVals[2]=combineBytes(gyro[4],gyro[5])*.000122f; //z
+    gyroOutVals[0]=combine_bytes(gyro[0],gyro[1])*.000122f; //x
+    gyroOutVals[1]=combine_bytes(gyro[2],gyro[3])*.000122f; //y
+    gyroOutVals[2]=combine_bytes(gyro[4],gyro[5])*.000122f; //z
 }
 
 

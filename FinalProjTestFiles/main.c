@@ -25,17 +25,23 @@ int main() {
     }
     uint32_t *duties = get_duty(inPins);
     uint16_t *outStage=translate(nothing); //initial set, never used
-    uint16_6 *smoothOut;
+    uint16_t *smoothOut;
     uint16_t input[6];
-        struct Output outGyro;
+    struct Output outGyro;
+    struct AccelVals accelVals;
+    struct Angles angles;
     initGyro();
     initBaro();
     uint32_t lastTimeRead=timer_read(); //used to track acceleration for speed calculation
-    unti32_t speedVal; //initial speed must be 0 on boot
-    int32_t accelVals[6]={0,0,0,0,0,0};
-    int32_t angles[3]={0,0,0};
+    uint32_t speedVal; //initial speed must be 0 on boot
+    // int32_t *accelVals;
+    // int32_t *angles;
+    // int32_t accelValstemp[] = {0,0,0,0,0,0};
+    // accelVals=accelValstemp;
+    // int32_t anglestemp[] = {0,0,0};
+    // angles=anglestemp;
     while(1) {
-        angles=updateGyroVals(lastTimeRead, angles); //[Ax,Ay,Az]
+        angles = updateGyroVals(lastTimeRead, angles); //[Ax,Ay,Az]
         accelVals=updateAccelVals(lastTimeRead,accelVals,angles); //[Vx,Vy,Vz, Dx,Dy,Dz]
         lastTimeRead=timer_read(); //reads current time in us
         //take input values and translate according to output pin configuration

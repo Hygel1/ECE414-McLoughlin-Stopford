@@ -4,13 +4,36 @@
 #include "stdbool.h"
 #include "control.h"
 #include <math.h>
+#include "gyro.h"
+#include "hardware/pwm.h"
 
 //takes in values 0-400
 uint16_t output[6];
 uint16_t guiderailOutput[6];
-unit32_t timeSinceLastTransition;
-int32_t accelVals[6]; //[Vx,Vy,Vz,Dx,Dy,Dz]
-int32_t angleVals[3];
+struct AccelVals accelVals; //[Vx,Vy,Vz,Dx,Dy,Dz]
+struct Angles angleVals;
+uint32_t timeSinceLastTransition;
+uint32_t distFromTakeoff;
+uint32_t angleFromTakeoff;
+struct Vel velocity {
+    uint16_t vals[];
+};
+struct angVel angVel { //total angular velocity [x,y,z]
+    uint16_t vals[];
+};
+struct Ang ang{ //total angular distance [x,y,z]
+    uint16_t vals[];
+};
+
+//I guess we're making INS
+/**
+ * @brief updates values for onboard Inertial Navigation System
+ */
+void updateINS(struct Output gyroVals) {
+    for(int i = 0; i < 3; i++) {
+        velocity.vals[i] = gyroVals
+    }
+}
 /**
  * @brief takes input and translates it to output indices
  */
@@ -30,37 +53,39 @@ uint16_t *translate(uint32_t input[]){
  * 
  * @return uint8_t* array of 'corrected' input values
  */
-uint16_t *guiderail(uint16_t controls[], int32_t *gyro[],int32_t *vPos[],uint8_t recon){
-    guiderailOutput=controls;
+uint16_t *guiderail(uint16_t controls[], struct Angles gyro, struct AccelVals vPos,uint8_t *recon){
+    for(int i = 0; i < 5; i++) {
+        guiderailOutput[i]=controls[i];
+    }
     uint32_t maxPitch = 45;//can correct with some equation involving speed and atmospheric pressure
     uint32_t maxRoll = 80; //assuming 80 degrees is the max intended roll for turning, mostly just used to ensure that the plane doesn't end up upside down
     uint16_t aileron_fromCenter; //max value of 200, indicates how far the ailerons should move from center to fix roll angle
     //no yaw control because not an issue and also not controllable
     //also assuming that 0 values are 0 and negative values go negative
-    if(gyro[2]>maxPitch){ //if nose too far up
+    if(gyro.vals[2]>maxPitch){ //if nose too far up
         //move elevator to push plane down, put value to 200 (centerpoint)
         guiderailOutput[3]=200;
     }
-    else if(gyro[2]<(-1*maxPitch)){ //if nose too far down
+    else if(gyro.vals[2]<(-1*maxPitch)){ //if nose too far down
         guiderailOutput[3]= 400; //want to bring tail up so put elevetor in upward position -- drastice move to avoid freefall
         /*the smoothTransition function will likely prevent the elevetor from actually making it to max from this in any real scenario 
         other than freefall but will ensure a natural feeling guiderail that doesn't just throw the plane back up every time you hit 45
         rechecks angle every poll */
     }
-    if(gyro[1]>80){ ///rolling too far right
+    if(gyro.vals[1]>80){ ///rolling too far right
         if(controls[1]>100) guiderailOutput[1]=100;//left aileron goes down
         if(controls[2]<300) guiderailOutput[2]=300;//right aileron goes up
     }
-    else if(gyro[1]<-80){ //rolling too far left
+    else if(gyro.vals[1]<-80){ //rolling too far left
         if(controls[1]<300) guiderailOutput[1]=300; //left aileron goes up
         if(controls[2]>100) guiderailOutput[2]=100; //right aileron goes down
     }
     //minspeed stall avoidance, not too worried about overspeed by prop
-    if(vPos[0]<8){ //assuming x axis is the direction of flight, measured in m/s
+    if(vPos.vals[0]<8){ //assuming x axis is the direction of flight, measured in m/s
         if(controls[0]<300) guiderailOutput[0]=300;
     }
     //range control
-    uint32_t totalDistance = sqrt(vPos[3]*vPos[3]+vPos[4]*vPos[4]+vPos[5]*vPos[5]);
+    uint32_t totalDistance = sqrt((vPos.vals[3])*(vPos.vals[3])+(vPos.vals[4])*(vPos.vals[4])+(vPos.vals[5])*(vPos.vals[5]));
     if(totalDistance>150&&!recon){ //assuming range of controller is around 150m -- also assuming that the initial point of collection is around the same as where the controller will remain
         //TODO: MAKE RECON FUNCTION TO RETURN BACK IN DIRECTION OF CONTROLLER WHEN FLYING OUT OF RANGE, WILL LIKELY REQUIRE PQM WRITING FROM INSIDE FUNCTION
     }
@@ -97,34 +122,38 @@ uint16_t *smoothTransition(uint16_t currentState[], uint16_t desiredPoint[]){
     return guiderailOutput; //using same guiderail output for this method since no memory between function is required for either method
 }
 // [roll, pitch, yaw]
-int32_t *updateGyroVals(unt32_t lastTime,int32_t lastVals[]){
-    float gyroHold=readGyroVals();
-    for(int i=0;i<3;i++){
-        uint32_t timeDiff=(timerRead()-lastTime)*1000000;
-        angleVals[i]=lastVals[i]+gyroHold[i]/9.81*(timeDiff*timeDiff);
+struct Angles updateGyroVals(uint32_t lastTime, struct Angles lastVals){
+   // float gyroHold=readGyroVals(); // Sean WTF is readGyroVals
+    struct Output gyroHold;
+    gyroHold = readGyro();
+    for(int i=3;i<6;i++){ //Sean I changed i so that we're getting the angle values
+        uint32_t timeDiff=(timer_read()-lastTime)*1000000; //Sean, changed timerRead to timer_read, is that what you meantt?
+        angleVals.vals[i]=lastVals.vals[i]+gyroHold.readOut[i]/9.81*(timeDiff*timeDiff);
     }
     return angleVals;
 }
 // [Vx,Vy,Vz,Dx,Dy,Dz]
-int32_t *updateAccelVals(uint32_t lastTime,int32_t lastVals[],int32_t angles[]){
+struct AccelVals updateAccelVals(uint32_t lastTime,struct AccelVals lastVals, struct Angles angles){
     //take accel value and time interval since last read and use to estimate speed change since last read
-    float accelHold[]=readAccel(); //accelerometer reads in g
-    uint32_t timeInterval=(timerRead()-lastTime)*1000000;
+    struct Output accelHold;
+    accelHold = readGyro();
+    //float accelHold[] = readAccel(); //accelerometer reads in g
+    uint32_t timeInterval=(timer_read()-lastTime)*1000000;//Sean, changed timerRead to timer_read, is that what you meantt?
     int32_t interm[6];
     for(int i=0;i<3;i++){ //0-2 speed values, 3-5 position values
         //these equations should be updated to consider the roll and pitch angles of the plane
-        interm[i]=lastVals[i]+accelHold[i]/9.81*(timeInterval); //can convert from m/s to mph or something
-        interm[i+3]=lastVals[i+3]+accelHold[i]/9.81*(timeInterval*timeInterval); //percieved distance calc
-    } //theta=roll=angles[0], alpha=pitch=angles[1], beta=yaw=angles[2]  - accelHold=deltaVals
+        interm[i]=lastVals.vals[i]+accelHold.readOut[i]/9.81*(timeInterval); //can convert from m/s to mph or something
+        interm[i+3]=lastVals.vals[i+3]+accelHold.readOut[i]/9.81*(timeInterval*timeInterval); //percieved distance calc
+    } //theta=roll=angles.vals[0], alpha=pitch=angles.vals[1], beta=yaw=angles.vals[2]  - accelHold=deltaVals
     //modify 
-    accelVals[0]=lastVals[0]+interm[0]*(cos(angles[1])+cos(angles[2]));
-    accelVals[3]=lastVals[3]+interm[3]*(cos(angles[1])+cos(angles[2]));
+    accelVals.vals[0]=lastVals.vals[0]+interm[0]*(cos(angles.vals[1])+cos(angles.vals[2]));
+    accelVals.vals[3]=lastVals.vals[3]+interm[3]*(cos(angles.vals[1])+cos(angles.vals[2]));
 
-    accelVals[1]=lastVals[1]+interm[0]*sin(angles[2])+interm[1]*cos(angles[0])+interm[2]*cos(3.14159/2-angles[0]);
-    accelVals[4]=lastVals[4]+interm[3]*sin(angles[2])+interm[4]*cos(angles[0])+interm[5]*cos(3.14159/2-angles[0]);
+    accelVals.vals[1]=lastVals.vals[1]+interm[0]*sin(angles.vals[2])+interm[1]*cos(angles.vals[0])+interm[2]*cos(3.14159/2-angles.vals[0]);
+    accelVals.vals[4]=lastVals.vals[4]+interm[3]*sin(angles.vals[2])+interm[4]*cos(angles.vals[0])+interm[5]*cos(3.14159/2-angles.vals[0]);
     
-    accelVals[2]=lastVals[2]+interm[0]*sin(angles[1])+interm[1]*sin(angles[0])+interm[2]*sin(angles(3.14159/2-angles[0]));
-    accelVals[5]=lastVals[5]+interm[3]*sin(angles[1])+interm[4]*sin(angles[0])+interm[5]*sin(angles(3.14159/2-angles[0]));
+    accelVals.vals[2]=lastVals.vals[2]+interm[0]*sin(angles.vals[1])+interm[1]*sin(angles.vals[0])+interm[2]*sin(3.14159/2-angles.vals[0]);
+    accelVals.vals[5]=lastVals.vals[5]+interm[3]*sin(angles.vals[1])+interm[4]*sin(angles.vals[0])+interm[5]*sin(3.14159/2-angles.vals[0]);
     return accelVals;
 }
 /**
@@ -132,6 +161,7 @@ int32_t *updateAccelVals(uint32_t lastTime,int32_t lastVals[],int32_t angles[]){
  */
 void setAllPWM(uint16_t writeVals[],uint16_t outPins[]){
     //translate from 0-400 easy math values to pwm write range
+    uint16_t input[6];
     for(int i=0;i<6;i++) input[i]=(uint16_t)((writeVals[i]/4*.05+5)/100*0xffff);
     for(uint8_t i = 0; i < 6; i++) { //output pwm values
         pwm_pin_set_level(input[i], outPins[i],i);
