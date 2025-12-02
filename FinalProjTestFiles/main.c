@@ -6,7 +6,9 @@
 #include "getPWM.h"
 #include "control.h"
 #include "baro.h"
+#ifndef GYRO
 #include "gyro.h"
+#endif
 
 #define UART_ID uart0
 #define BAUD_RATE 115200
@@ -28,10 +30,11 @@ int main() {
     uint16_t *smoothOut;
     uint16_t input[6];
     struct Output outGyro;
-    struct AccelVals accelVals;
+    struct Vals6 accelVals;
     struct Angles angles;
     initGyro();
     initBaro();
+    initINS();
     uint32_t lastTimeRead=timer_read(); //used to track acceleration for speed calculation
     uint32_t speedVal; //initial speed must be 0 on boot
     // int32_t *accelVals;

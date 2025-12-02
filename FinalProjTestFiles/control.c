@@ -2,37 +2,59 @@
 #include "timer.h"
 #include "stdint.h"
 #include "stdbool.h"
+#ifndef CONTROL
 #include "control.h"
+#endif
 #include <math.h>
-#include "gyro.h"
 #include "hardware/pwm.h"
+#ifndef GYRO
+#include "gyro.h"
+#endif
 
 //takes in values 0-400
 uint16_t output[6];
 uint16_t guiderailOutput[6];
-struct AccelVals accelVals; //[Vx,Vy,Vz,Dx,Dy,Dz]
+struct Vals6 accelVals; //[Vx,Vy,Vz,Dx,Dy,Dz]
 struct Angles angleVals;
 uint32_t timeSinceLastTransition;
 uint32_t distFromTakeoff;
 uint32_t angleFromTakeoff;
-struct Vel velocity {
-    uint16_t vals[];
-};
-struct angVel angVel { //total angular velocity [x,y,z]
-    uint16_t vals[];
-};
-struct Ang ang{ //total angular distance [x,y,z]
-    uint16_t vals[];
-};
 
+uint32_t timeLastINS;
+
+struct Vals6 dist;
+struct Vals6 velocity;
+
+void initINS() {
+for(int i = 0; i < 6; i++) {
+    velocity.vals[i] = 0;
+    dist.vals[i] = 0;
+}
+}
 //I guess we're making INS
 /**
  * @brief updates values for onboard Inertial Navigation System
  */
-void updateINS(struct Output gyroVals) {
-    for(int i = 0; i < 3; i++) {
-        velocity.vals[i] = gyroVals
+struct Vals6 updateINS(struct Output gyroVals) {
+    uint32_t timeNow=timer_read();
+    uint32_t timeElapsed=timeNow-timeLastINS; //time elapsed since last run used for movement allowance calculation
+    timeLastINS=timeNow;
+    //updade
+    for(int i = 0; i < 6; i++) {
+        if(i < 3) { //correct that accel is in g
+            if(i = 2) {//correct that z accel is 1g default
+            dist.vals[i] = dist.vals[i] + velocity.vals[i]*timeElapsed + .5*(gyroVals.readOut[i]-1)*9.80665*timeElapsed;
+            velocity.vals[i] = velocity.vals[i]+ ((gyroVals.readOut[i]-1))*9.80665*timeElapsed*timeElapsed;                
+            } else {
+            dist.vals[i] = dist.vals[i] + velocity.vals[i]*timeElapsed + .5*gyroVals.readOut[i]*9.80665*timeElapsed;
+            velocity.vals[i] = velocity.vals[i]+ (gyroVals.readOut[i])*9.80665*timeElapsed*timeElapsed;
+            }
+        } else{
+            dist.vals[i] = dist.vals[i] + velocity.vals[i]*timeElapsed + .5*gyroVals.readOut[i]*timeElapsed;
+            velocity.vals[i] = velocity.vals[i]+ (gyroVals.readOut[i])*timeElapsed*timeElapsed;
+        }
     }
+    return dist;
 }
 /**
  * @brief takes input and translates it to output indices
@@ -53,7 +75,7 @@ uint16_t *translate(uint32_t input[]){
  * 
  * @return uint8_t* array of 'corrected' input values
  */
-uint16_t *guiderail(uint16_t controls[], struct Angles gyro, struct AccelVals vPos,uint8_t *recon){
+uint16_t *guiderail(uint16_t controls[], struct Angles gyro, struct Vals6 vPos,uint8_t *recon){
     for(int i = 0; i < 5; i++) {
         guiderailOutput[i]=controls[i];
     }
@@ -62,6 +84,8 @@ uint16_t *guiderail(uint16_t controls[], struct Angles gyro, struct AccelVals vP
     uint16_t aileron_fromCenter; //max value of 200, indicates how far the ailerons should move from center to fix roll angle
     //no yaw control because not an issue and also not controllable
     //also assuming that 0 values are 0 and negative values go negative
+
+    //GYRO.VALS IS ANGULAR ACCEL
     if(gyro.vals[2]>maxPitch){ //if nose too far up
         //move elevator to push plane down, put value to 200 (centerpoint)
         guiderailOutput[3]=200;
@@ -88,6 +112,7 @@ uint16_t *guiderail(uint16_t controls[], struct Angles gyro, struct AccelVals vP
     uint32_t totalDistance = sqrt((vPos.vals[3])*(vPos.vals[3])+(vPos.vals[4])*(vPos.vals[4])+(vPos.vals[5])*(vPos.vals[5]));
     if(totalDistance>150&&!recon){ //assuming range of controller is around 150m -- also assuming that the initial point of collection is around the same as where the controller will remain
         //TODO: MAKE RECON FUNCTION TO RETURN BACK IN DIRECTION OF CONTROLLER WHEN FLYING OUT OF RANGE, WILL LIKELY REQUIRE PQM WRITING FROM INSIDE FUNCTION
+        
     }
     return guiderailOutput;
 }
@@ -98,7 +123,18 @@ uint16_t *guiderail(uint16_t controls[], struct Angles gyro, struct AccelVals vP
  * 
  */
 void recon(int32_t *gyro[], int32_t *vPos[]){
-    //TODO: WRITE THIS WHOLE THING BC I DONT WANNA
+
+    // //TODO: WRITE THIS WHOLE THING BC I DONT WANNA
+    // //This is going to suck
+
+    // //define out of range --> what's this value?
+    // //its 150, see totalDistance above
+    // //So first we need to find the angle from the zero point using the I HAVE NO CLUE
+    // angleFromTakeoff = atan(dist.vals[1]/dist.vals[0]); //angle = arctan(y/x)
+    // //turn around. how? not sure
+    // //set ailerons to half deflection to turn right until Z angle has changed by 180 degrees?
+    // uint32_t turning[] = {250, 400, 200, 200}; //~half power, full deflection on ailerons, 0 on elevator
+    // translate()
 }
 /**
  * ensures that plane doesn't attempt to move too quickly and break out of the envelope of control
@@ -122,6 +158,9 @@ uint16_t *smoothTransition(uint16_t currentState[], uint16_t desiredPoint[]){
     return guiderailOutput; //using same guiderail output for this method since no memory between function is required for either method
 }
 // [roll, pitch, yaw]
+/**
+ * Returns the angular distance travelled
+ */
 struct Angles updateGyroVals(uint32_t lastTime, struct Angles lastVals){
    // float gyroHold=readGyroVals(); // Sean WTF is readGyroVals
     struct Output gyroHold;
@@ -133,7 +172,7 @@ struct Angles updateGyroVals(uint32_t lastTime, struct Angles lastVals){
     return angleVals;
 }
 // [Vx,Vy,Vz,Dx,Dy,Dz]
-struct AccelVals updateAccelVals(uint32_t lastTime,struct AccelVals lastVals, struct Angles angles){
+struct Vals6 updateAccelVals(uint32_t lastTime,struct Vals6 lastVals, struct Angles angles){
     //take accel value and time interval since last read and use to estimate speed change since last read
     struct Output accelHold;
     accelHold = readGyro();
@@ -146,14 +185,16 @@ struct AccelVals updateAccelVals(uint32_t lastTime,struct AccelVals lastVals, st
         interm[i+3]=lastVals.vals[i+3]+accelHold.readOut[i]/9.81*(timeInterval*timeInterval); //percieved distance calc
     } //theta=roll=angles.vals[0], alpha=pitch=angles.vals[1], beta=yaw=angles.vals[2]  - accelHold=deltaVals
     //modify 
-    accelVals.vals[0]=lastVals.vals[0]+interm[0]*(cos(angles.vals[1])+cos(angles.vals[2]));
-    accelVals.vals[3]=lastVals.vals[3]+interm[3]*(cos(angles.vals[1])+cos(angles.vals[2]));
 
-    accelVals.vals[1]=lastVals.vals[1]+interm[0]*sin(angles.vals[2])+interm[1]*cos(angles.vals[0])+interm[2]*cos(3.14159/2-angles.vals[0]);
-    accelVals.vals[4]=lastVals.vals[4]+interm[3]*sin(angles.vals[2])+interm[4]*cos(angles.vals[0])+interm[5]*cos(3.14159/2-angles.vals[0]);
+    //SEAN ARE THE COS AND SINE SUPPOSED TO USE DEGREES?
+    accelVals.vals[0]=lastVals.vals[0]+interm[0]*(cos(angles.vals[1]*0.01745329)+cos(angles.vals[2]*0.01745329));
+    accelVals.vals[3]=lastVals.vals[3]+interm[3]*(cos(angles.vals[1]*0.01745329)+cos(angles.vals[2]*0.01745329));
+
+    accelVals.vals[1]=lastVals.vals[1]+interm[0]*sin(angles.vals[2])+interm[1]*cos(angles.vals[0])+interm[2]*cos(3.14159/2-angles.vals[0]*0.01745329);
+    accelVals.vals[4]=lastVals.vals[4]+interm[3]*sin(angles.vals[2])+interm[4]*cos(angles.vals[0])+interm[5]*cos(3.14159/2-angles.vals[0]*0.01745329);
     
-    accelVals.vals[2]=lastVals.vals[2]+interm[0]*sin(angles.vals[1])+interm[1]*sin(angles.vals[0])+interm[2]*sin(3.14159/2-angles.vals[0]);
-    accelVals.vals[5]=lastVals.vals[5]+interm[3]*sin(angles.vals[1])+interm[4]*sin(angles.vals[0])+interm[5]*sin(3.14159/2-angles.vals[0]);
+    accelVals.vals[2]=lastVals.vals[2]+interm[0]*sin(angles.vals[1])+interm[1]*sin(angles.vals[0])+interm[2]*sin(3.14159/2-angles.vals[0]*0.01745329);
+    accelVals.vals[5]=lastVals.vals[5]+interm[3]*sin(angles.vals[1])+interm[4]*sin(angles.vals[0])+interm[5]*sin(3.14159/2-angles.vals[0]*0.01745329);
     return accelVals;
 }
 /**

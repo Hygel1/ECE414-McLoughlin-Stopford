@@ -2,6 +2,7 @@
 #include "hardware/i2c.h"
 #include <stdio.h>
 #include "hardware/uart.h"
+#define GYRO
 struct Output {
     float readOut[7];
 };

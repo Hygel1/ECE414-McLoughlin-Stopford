@@ -22,7 +22,7 @@
 // UART pin definitions
 #define UART_TX_PIN 0
 #define UART_RX_PIN 1
-
+struct Output offset;
 void i2c_write_reg(uint8_t reg, uint8_t val) {
     uint8_t buf[2] = {reg, val};
     i2c_write_blocking(I2C_PORT, LSM6DSOX_ADDR, buf, 2, false);
@@ -44,7 +44,6 @@ int16_t combine_bytes(uint8_t low, uint8_t high) {
     return (int16_t)((high << 8) | low);
 }
 bool initGyro(){
-    
     //stdio_init_all();
     i2c_init(I2C_PORT, 400 * 1000);
     gpio_set_function(SDA_PIN, GPIO_FUNC_I2C);
@@ -55,6 +54,8 @@ bool initGyro(){
     i2c_write_reg(REG_CTRL1_XL, 0x48);
     //configure gyro: ODR = 104Hz, +/- 1000dps
     i2c_write_reg(REG_CTRL2_G, 0x48);
+    offset = readGyro(); //get calibration values
+
 }
 struct Output readGyro(){
         struct Output out;
@@ -65,35 +66,36 @@ struct Output readGyro(){
         i2c_read_multi(REG_OUTX_L_A, accel, 6);
         i2c_read_multi(REG_OUTX_L_G, gyro, 6);
         i2c_read_multi(REG_OUT_TEMP, temp, 2);
+        // for(int i = 0; i < 6; i++) {
+        //     out.oldOut[i] = out.readOut[i];
+        // }
+        out.readOut[0] = (combine_bytes(accel[0], accel[1]) * 0.000122f) - offset.readOut[0];
+        out.readOut[1] = combine_bytes(accel[2], accel[3]) * 0.000122f - offset.readOut[1];
+        out.readOut[2] = combine_bytes(accel[4], accel[5]) * 0.000122f - offset.readOut[2] + 1; //keep default Z at 1g
 
-        out.readOut[0] = combine_bytes(accel[0], accel[1]) * 0.000122f;
-        out.readOut[1] = combine_bytes(accel[2], accel[3]) * 0.000122f;
-        out.readOut[2] = combine_bytes(accel[4], accel[5]) * 0.000122f;
-
-        out.readOut[3]= combine_bytes(gyro[0], gyro[1])  *.030f;
-        out.readOut[4] = combine_bytes(gyro[2], gyro[3]) *.030f;
-        out.readOut[5]= combine_bytes(gyro[4], gyro[5])  *.030f;
+        out.readOut[3]= combine_bytes(gyro[0], gyro[1])  *.030f - offset.readOut[3];
+        out.readOut[4] = combine_bytes(gyro[2], gyro[3]) *.030f - offset.readOut[4];
+        out.readOut[5]= combine_bytes(gyro[4], gyro[5])  *.030f - offset.readOut[5];
 
         out.readOut[6] = combine_bytes(temp[0], temp[1]);
-
         return out;
 }
-float gyroOutVals[3]; //used for both accel and gyro individual outputs
-float *readAccel(){
-    uint8_t accel[6];
-    i2c_read_multi(REG_OUTX_L_A, accel, 6);
-    gyroOutVals[0]=combine_bytes(accel[0],accel[1])*.000122f; //x
-    gyroOutVals[1]=combine_bytes(accel[2],accel[3])*.000122f; //y
-    gyroOutVals[2]=combine_bytes(accel[4],accel[5])*.000122f; //z
-    return gyroOutVals; //[x,y,z]
-}
-float *readGyroVals(){
-    uint8_t gyro[6];
-    i2c_read_multi(REG_OUTX_L_G, gyro, 6);
-    gyroOutVals[0]=combine_bytes(gyro[0],gyro[1])*.000122f; //x
-    gyroOutVals[1]=combine_bytes(gyro[2],gyro[3])*.000122f; //y
-    gyroOutVals[2]=combine_bytes(gyro[4],gyro[5])*.000122f; //z
-}
+// float gyroOutVals[3]; //used for both accel and gyro individual outputs
+// float *readAccel(){
+//     uint8_t accel[6];
+//     i2c_read_multi(REG_OUTX_L_A, accel, 6);
+//     gyroOutVals[0]=combine_bytes(accel[0],accel[1])*.000122f; //x
+//     gyroOutVals[1]=combine_bytes(accel[2],accel[3])*.000122f; //y
+//     gyroOutVals[2]=combine_bytes(accel[4],accel[5])*.000122f; //z
+//     return gyroOutVals; //[x,y,z]
+// }
+// float *readGyroVals(){
+//     uint8_t gyro[6];
+//     i2c_read_multi(REG_OUTX_L_G, gyro, 6);
+//     gyroOutVals[0]=combine_bytes(gyro[0],gyro[1])*.000122f; //x
+//     gyroOutVals[1]=combine_bytes(gyro[2],gyro[3])*.000122f; //y
+//     gyroOutVals[2]=combine_bytes(gyro[4],gyro[5])*.000122f; //z
+// }
 
 
 //old function for operation as main file, rewrite to return relevant values in array form

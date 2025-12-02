@@ -18,6 +18,7 @@ struct bmp5_sensor_data data;
 struct bmp5_osr_odr_press_config config = {0};
 struct bmp5_dev dev;
 static uint8_t dev_addrGlobal = BMP5_I2C_ADDR;
+uint32_t zeroPress;
 
 /* RP2040 I2C callbacks expected by this BMP5 driver */
 int8_t bmp5_i2c_read(uint8_t reg_addr, uint8_t *data_buf, uint32_t len, void *intf_ptr)
@@ -106,13 +107,19 @@ void initBaro() {
 
 bmp5_set_osr_odr_press_config(&config, &dev);
 bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &dev);
+//zero altitude
+    bmp5_get_sensor_data(&data, &config, &dev);
+    zeroPress = data.pressure;
 }
 
 void readBaro() {
     bmp5_get_sensor_data(&data, &config, &dev);
     //This eq might be dependent on temp and not work in a climate controlled room, not too sure though
     //float alt = ((pow((101325/data.pressure), .190284)-1)*(data.temperature+273.15))/.0065;
-    float alt = 145366.45*(1-pow((data.pressure/100/1013.25), .190284));
+    //float alt = 145366.45*(1-pow((data.pressure/100/1013.25), .190284));
+    float alt;
+    //We're going with "1hPa pressure decrease is 8 meters"
+    alt = ((data.pressure - zeroPress)*8/100);
     printf("Temp = %.2f C  Pressure = %.2f Pa Altitude = %.2f\n", data.temperature, data.pressure, alt);
     sleep_ms(250);
 }
