@@ -10,8 +10,8 @@
 
 #define BMP5_I2C_ADDR 0x47  // correct for your board (0x46/0x47 are the two options)
 #define I2C_PORT i2c0
-#define SDA_PIN  16
-#define SCL_PIN  17
+#define SDA_PIN  26
+#define SCL_PIN  27
 
 int8_t rslt;
 struct bmp5_sensor_data data;

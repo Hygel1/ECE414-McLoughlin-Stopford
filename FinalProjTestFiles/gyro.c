@@ -4,8 +4,8 @@
 #include "hardware/uart.h"
 #include "gyro.h"
 #define I2C_PORT i2c0
-#define SDA_PIN  16
-#define SCL_PIN  17
+#define SDA_PIN  26
+#define SCL_PIN  27
 
 #define LSM6DSOX_ADDR     0x6A  // or 0x6B if SA0 pulled high
 #define REG_WHO_AM_I      0x0F

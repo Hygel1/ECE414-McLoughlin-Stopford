@@ -19,7 +19,7 @@
 uint16_t inputsCorrected[6];
 int main() {
     stdio_init_all();
-    uint16_t outPins[] = {15, 19, 21, 27, 29, 16};// {prop, L_aileron, R_aileron, elevator, nc, nc}
+    uint16_t outPins[] = {15, 19, 21, 16, 29, 27};// {prop, L_aileron, R_aileron, elevator, nc, nc}
     uint16_t inPins[] = {4, 6, 8, 10, 12, 14}; //{NC, L_Wheel, L_Horiz, R_Vert, L_Vert, R, Horiz, NC}
     uint32_t nothing[]= {0,0,0,0,0,0};
     for(uint8_t i =0; i <6; i++) {
@@ -44,17 +44,17 @@ int main() {
     // int32_t anglestemp[] = {0,0,0};
     // angles=anglestemp;
     while(1) {
-        angles = updateGyroVals(lastTimeRead, angles); //[Ax,Ay,Az]
-        accelVals=updateAccelVals(lastTimeRead,accelVals,angles); //[Vx,Vy,Vz, Dx,Dy,Dz]
+        //angles = updateGyroVals(lastTimeRead, angles); //[Ax,Ay,Az]
+        //accelVals=updateAccelVals(lastTimeRead,accelVals,angles); //[Vx,Vy,Vz, Dx,Dy,Dz]
         lastTimeRead=timer_read(); //reads current time in us
         //take input values and translate according to output pin configuration
         duties = get_duty(inPins);
         outStage = translate(duties); //values at this point are still from 0-400
-        outStage = guiderail(outStage,angles,accelVals,0); //use guiderail function to correct values accordingly
+        //outStage = guiderail(outStage,angles,accelVals,0); //use guiderail function to correct values accordingly
         //at this point, outStage is the 'most aggressive' version of the user's intended maneuver
-        smoothOut = smoothTransition(smoothOut,outStage); //slows down output controls to ensure that the user doesn't try to shift things too quickly
+        //smoothOut = smoothTransition(smoothOut,outStage); //slows down output controls to ensure that the user doesn't try to shift things too quickly
         //^^ smoothout array will always hold the latest outputted control array until this point
-        setAllPWM(smoothOut,outPins); //method located in controls file
+        setAllPWM(outStage,outPins); //method located in controls file
 
         //testing...
         printf("\n");
