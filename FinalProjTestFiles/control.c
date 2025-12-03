@@ -10,13 +10,15 @@
 #ifndef GYRO
 #include "gyro.h"
 #endif
+#include "pwm_pin.h"
 
 //takes in values 0-400
 uint16_t output[6];
 uint16_t guiderailOutput[6];
+uint16_t smoothOutput[6];
 struct Vals6 accelVals; //[Vx,Vy,Vz,Dx,Dy,Dz]
 struct Angles angleVals;
-uint32_t timeSinceLastTransition;
+uint32_t timeSinceLastTransition=0;
 uint32_t distFromTakeoff;
 uint32_t angleFromTakeoff;
 
@@ -62,7 +64,7 @@ struct Vals6 updateINS(struct Output gyroVals) {
 uint16_t *translate(uint32_t input[]){
     output[0]=(uint16_t)input[4]; //propeller power control
     output[1]=(uint16_t)input[5]; //L-aileron control
-    output[2]=(uint16_t)(400-input[5]); // R-Aileron control, inverse of left
+    output[2]=(uint16_t)(395-input[5]); // R-Aileron control, inverse of left
     output[3]=(uint16_t)input[3]; //elevator control;
     return output;
 }
@@ -144,18 +146,22 @@ uint16_t *smoothTransition(uint16_t currentState[], uint16_t desiredPoint[]){
     uint32_t timeElapsed=timeNow-timeSinceLastTransition; //time elapsed since last run used for movement allowance calculation
     timeSinceLastTransition=timeNow; //set time value for next operation
     //setting a full 0-400 to 1 second, that means that every single digit move should take 1/400 of a second, will let the error work in the favor of the faster move
-    uint16_t maxMove=(timeElapsed/2500); //10^6 (one second) / 400 (the alloted movement for one second) = 2500
-    for(int i=0;i<6;i++){ //for all input points
-        if(desiredPoint[i]>currentState[i]){ //if currentState should move in the positive direction
-            if(desiredPoint[i]-currentState[i]>maxMove) guiderailOutput[i]=currentState[i]+maxMove; //if asking to move beyond the max, limit
-            else guiderailOutput[i]=desiredPoint[i]; //otherwise, just put to desired point
+    uint16_t maxMove=(timeElapsed/250); //10^6 (one second) / 400 (the alloted movement for one second) = 2500
+    smoothOutput[0]=desiredPoint[0]; //propeller power can change instantly
+    for(int i=1;i<6;i++){ //for all input points
+        if(desiredPoint[i]>395) desiredPoint[i]=395; //clamp desired point to max
+        else if(desiredPoint[i]<5) desiredPoint[i]=5; //clamp desired point to min
+
+        else if(desiredPoint[i]>currentState[i]){ //if currentState should move in the positive direction
+            if(desiredPoint[i]-currentState[i]>maxMove) smoothOutput[i]=currentState[i]+maxMove; //if asking to move beyond the max, limit
+            else smoothOutput[i]=desiredPoint[i]; //otherwise, just put to desired point
         }
         else{ //if currentState should move in the negative direction
-            if(currentState[i]-desiredPoint[i]>maxMove) guiderailOutput[i]=currentState[i]-maxMove;
-            else guiderailOutput[i]=desiredPoint[i];
+            if(currentState[i]-desiredPoint[i]>maxMove) smoothOutput[i]=currentState[i]-maxMove;
+            else smoothOutput[i]=desiredPoint[i];
         }
     }
-    return guiderailOutput; //using same guiderail output for this method since no memory between function is required for either method
+    return smoothOutput;
 }
 // [roll, pitch, yaw]
 /**
