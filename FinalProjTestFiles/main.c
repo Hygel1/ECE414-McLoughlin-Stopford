@@ -19,7 +19,7 @@
 uint16_t inputsCorrected[6];
 int main() {
     stdio_init_all();
-    uint16_t outPins[] = {15, 19, 21, 16, 29, 27};// {prop(15), L_aileron(19), R_aileron(21), elevator(16), nc(29), nc(27)}
+    uint16_t outPins[] = {6, 19, 21, 16, 29, 27};// {prop(9), L_aileron(19), R_aileron(21), elevator(16), nc(29), nc(27)}
     uint16_t inPins[] = {4, 6, 8, 10, 12, 14}; //{NC(4), L_Wheel(6), L_Horiz(8), R_Vert(10), L_Vert(12), R_Horiz(14)}
     uint32_t nothing[]= {0,0,0,0,0,0};
     for(uint8_t i =0; i <6; i++) {
@@ -32,8 +32,8 @@ int main() {
     struct Output outGyro;
     struct Vals6 accelVals;
     struct Angles angles;
-    // initGyro();
-    // initBaro();
+    initGyro();
+    initBaro();
     // initINS();
     uint32_t lastTimeRead=timer_read(); //used to track acceleration for speed calculation
     uint32_t speedVal; //initial speed must be 0 on boot
@@ -49,9 +49,11 @@ int main() {
         lastTimeRead=timer_read(); //reads current time in us
         //take input values and translate according to output pin configuration
         duties = get_duty(inPins);
+          
         outStage = translate(duties); //values at this point are still from 0-400
         //outStage = guiderail(outStage,angles,accelVals,0); //use guiderail function to correct values accordingly
         //at this point, outStage is the 'most aggressive' version of the user's intended maneuver
+        //can probably prevent the bootup issue by omitting the smoothout on first run
         smoothOut = smoothTransition(smoothOut,outStage); //slows down output controls to ensure that the user doesn't try to shift things too quickly
         //^^ smoothout array will always hold the latest outputted control array until this point
         setAllPWM(smoothOut,outPins); //method located in controls file
@@ -63,10 +65,10 @@ int main() {
 
         //testing...
         //printf("\n");
-        //readBaro();
-        //outGyro = readGyro();
-        //printf("Accel: X=%.3fg Y=%.3fg Z=%.3fg\n", outGyro.readOut[0], outGyro.readOut[1], outGyro.readOut[2]);
-        //printf("Gyro: X=%.3f°/s Y=%.3f°/s Z=%.3f°/s\n", outGyro.readOut[3], outGyro.readOut[4], outGyro.readOut[5]);
-        //printf("Temperature: %2.2f degrees\n", output.readOut[6]);
+        readBaro();
+        outGyro = readGyro();
+        printf("Accel: X=%.3fg Y=%.3fg Z=%.3fg\n", outGyro.readOut[0], outGyro.readOut[1], outGyro.readOut[2]);
+        printf("Gyro: X=%.3f°/s Y=%.3f°/s Z=%.3f°/s\n", outGyro.readOut[3], outGyro.readOut[4], outGyro.readOut[5]);
+        //printf("Temperature: %2.2f degrees\n", outGyro.readOut[6]);
     }
 }

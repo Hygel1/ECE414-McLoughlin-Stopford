@@ -9,7 +9,7 @@
 #include <math.h>
 
 #define BMP5_I2C_ADDR 0x47  // correct for your board (0x46/0x47 are the two options)
-#define I2C_PORT i2c0
+#define I2C_PORT i2c1
 #define SDA_PIN  26
 #define SCL_PIN  27
 
@@ -121,7 +121,7 @@ void readBaro() {
     //We're going with "1hPa pressure decrease is 8 meters"
     alt = ((data.pressure - zeroPress)*8/100);
     printf("Temp = %.2f C  Pressure = %.2f Pa Altitude = %.2f\n", data.temperature, data.pressure, alt);
-    sleep_ms(250);
+    //sleep_ms(250);
 }
 
 uint32_t getAltitude(){

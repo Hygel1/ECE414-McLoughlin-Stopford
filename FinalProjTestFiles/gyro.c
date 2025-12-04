@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "hardware/uart.h"
 #include "gyro.h"
-#define I2C_PORT i2c0
+#define I2C_PORT i2c1
 #define SDA_PIN  26
 #define SCL_PIN  27
 
