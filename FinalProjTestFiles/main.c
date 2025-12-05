@@ -27,7 +27,7 @@ int main() {
     }
     uint32_t *duties = get_duty(inPins);
     uint16_t *outStage=translate(nothing); //initial set, never used
-    uint16_t *smoothOut;
+    //uint16_t *smoothOut={0, 200, 200, 200, 0, 0}; //initial smooth output, starts at neutral positions
     uint16_t input[6];
     struct Output outGyro;
     struct Vals6 accelVals;
@@ -54,9 +54,9 @@ int main() {
         //outStage = guiderail(outStage,angles,accelVals,0); //use guiderail function to correct values accordingly
         //at this point, outStage is the 'most aggressive' version of the user's intended maneuver
         //can probably prevent the bootup issue by omitting the smoothout on first run
-        smoothOut = smoothTransition(smoothOut,outStage); //slows down output controls to ensure that the user doesn't try to shift things too quickly
+        //smoothOut = smoothTransition(smoothOut,outStage); //slows down output controls to ensure that the user doesn't try to shift things too quickly
         //^^ smoothout array will always hold the latest outputted control array until this point
-        setAllPWM(smoothOut,outPins); //method located in controls file
+        setAllPWM(outStage,outPins); //method located in controls file
 
         // for(int i=0;i<6;i++) input[i]=(uint16_t)((duties[i]/4*.05+5)/100*0xffff);
         // for(uint8_t i = 0; i < 6; i++) { //output pwm values

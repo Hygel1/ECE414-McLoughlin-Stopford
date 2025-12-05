@@ -18,7 +18,7 @@ uint16_t guiderailOutput[6];
 uint16_t smoothOutput[6];
 struct Vals6 accelVals; //[Vx,Vy,Vz,Dx,Dy,Dz]
 struct Angles angleVals;
-uint32_t timeSinceLastTransition=0;
+uint64_t timeSinceLastTransition=0;
 uint32_t distFromTakeoff;
 uint32_t angleFromTakeoff;
 
@@ -62,9 +62,13 @@ struct Vals6 updateINS(struct Output gyroVals) {
  * @brief takes input and translates it to output indices
  */
 uint16_t *translate(uint32_t input[]){
+    if(input[4] < 50) {
+        output[0] = 0;
+    } else {
     output[0]=(uint16_t)input[4]; //propeller power control
-    output[1]=(uint16_t)input[5]; //L-aileron control
-    output[2]=(uint16_t)(395-input[5]); // R-Aileron control, inverse of left
+    }
+    output[1]=(uint16_t)(input[5]+30); //L-aileron control
+    output[2]=(uint16_t)(input[5]-10); // R-Aileron control, inverse of left
     output[3]=(uint16_t)input[3]; //elevator control;
     return output;
 }
@@ -142,8 +146,8 @@ void recon(int32_t *gyro[], int32_t *vPos[]){
  * ensures that plane doesn't attempt to move too quickly and break out of the envelope of control
 */
 uint16_t *smoothTransition(uint16_t currentState[], uint16_t desiredPoint[]){
-    uint32_t timeNow=timer_read();
-    uint32_t timeElapsed=timeNow-timeSinceLastTransition; //time elapsed since last run used for movement allowance calculation
+    uint64_t timeNow=timer_read();
+    uint64_t timeElapsed=timeNow-timeSinceLastTransition; //time elapsed since last run used for movement allowance calculation
     timeSinceLastTransition=timeNow; //set time value for next operation
     //setting a full 0-400 to 1 second, that means that every single digit move should take 1/400 of a second, will let the error work in the favor of the faster move
     uint16_t maxMove=(timeElapsed/250); //10^6 (one second) / 400 (the alloted movement for one second) = 2500
@@ -160,6 +164,8 @@ uint16_t *smoothTransition(uint16_t currentState[], uint16_t desiredPoint[]){
             if(currentState[i]-desiredPoint[i]>maxMove) smoothOutput[i]=currentState[i]-maxMove;
             else smoothOutput[i]=desiredPoint[i];
         }
+        if(smoothOutput[i]>395) smoothOutput[i]=395; //clamp output to max
+        else if(smoothOutput[i]<5) smoothOutput[i]=5; //clamp output to min
     }
     return smoothOutput;
 }
@@ -209,7 +215,11 @@ struct Vals6 updateAccelVals(uint32_t lastTime,struct Vals6 lastVals, struct Ang
 void setAllPWM(uint16_t writeVals[],uint16_t outPins[]){
     //translate from 0-400 easy math values to pwm write range
     uint16_t input[6];
-    for(int i=0;i<6;i++) input[i]=(uint16_t)((writeVals[i]/4*.05+5)/100*0xffff);
+    for(int i=0;i<6;i++)  {
+        if(writeVals[i]>395) writeVals[i]=395;
+     else if(writeVals[i]<0) writeVals[i]=0;
+        input[i]=(uint16_t)((writeVals[i]/4*.05+5)/100*0xffff);
+    }
     for(uint8_t i = 0; i < 6; i++) { //output pwm values
         pwm_pin_set_level(input[i], outPins[i],i);
     }
