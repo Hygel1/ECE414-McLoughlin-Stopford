@@ -69,9 +69,9 @@ struct Output readGyro(){
         // for(int i = 0; i < 6; i++) {
         //     out.oldOut[i] = out.readOut[i];
         // }
-        out.readOut[0] = (combine_bytes(accel[0], accel[1]) * 0.000122f) - offset.readOut[0];
-        out.readOut[1] = combine_bytes(accel[2], accel[3]) * 0.000122f - offset.readOut[1];
-        out.readOut[2] = combine_bytes(accel[4], accel[5]) * 0.000122f - offset.readOut[2] + 1; //keep default Z at 1g
+        out.readOut[0] = (combine_bytes(accel[0], accel[1]) * 0.000122f) - offset.readOut[0]; //out[0] = xAccel
+        out.readOut[1] = combine_bytes(accel[2], accel[3]) * 0.000122f - offset.readOut[1]; //out[1] = yAccel
+        out.readOut[2] = combine_bytes(accel[4], accel[5]) * 0.000122f - offset.readOut[2] + 1; //out[2]=zAccel keep default Z at 1g
 
         out.readOut[3]= combine_bytes(gyro[0], gyro[1])  *.030f - offset.readOut[3];
         out.readOut[4] = combine_bytes(gyro[2], gyro[3]) *.030f - offset.readOut[4];

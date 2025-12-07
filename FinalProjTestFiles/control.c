@@ -67,8 +67,8 @@ uint16_t *translate(uint32_t input[]){
     } else {
     output[0]=(uint16_t)input[4]; //propeller power control
     }
-    output[1]=(uint16_t)(input[5]+30); //L-aileron control
-    output[2]=(uint16_t)(input[5]-10); // R-Aileron control, inverse of left
+    output[1]=(uint16_t)(input[5]+20); //L-aileron control
+    output[2]=(uint16_t)(input[5]); // R-Aileron control, inverse of left
     output[3]=(uint16_t)input[3]; //elevator control;
     return output;
 }
@@ -164,8 +164,8 @@ uint16_t *smoothTransition(uint16_t currentState[], uint16_t desiredPoint[]){
             if(currentState[i]-desiredPoint[i]>maxMove) smoothOutput[i]=currentState[i]-maxMove;
             else smoothOutput[i]=desiredPoint[i];
         }
-        if(smoothOutput[i]>395) smoothOutput[i]=395; //clamp output to max
-        else if(smoothOutput[i]<5) smoothOutput[i]=5; //clamp output to min
+        //if(smoothOutput[i]>395) smoothOutput[i]=395; //clamp output to max
+        //else if(smoothOutput[i]<5) smoothOutput[i]=5; //clamp output to min
     }
     return smoothOutput;
 }
@@ -177,9 +177,9 @@ struct Angles updateGyroVals(uint32_t lastTime, struct Angles lastVals){
    // float gyroHold=readGyroVals(); // Sean WTF is readGyroVals
     struct Output gyroHold;
     gyroHold = readGyro();
-    for(int i=3;i<6;i++){ //Sean I changed i so that we're getting the angle values
-        uint32_t timeDiff=(timer_read()-lastTime)*1000000; //Sean, changed timerRead to timer_read, is that what you meantt?
-        angleVals.vals[i]=lastVals.vals[i]+gyroHold.readOut[i]/9.81*(timeDiff*timeDiff);
+    for(int i=3;i<6;i++){ 
+        uint32_t timeDiff=(timer_read()-lastTime)*1000000; 
+        angleVals.vals[i-3]=lastVals.vals[i-3]+gyroHold.readOut[i]/9.81*(timeDiff*timeDiff);
     }
     return angleVals;
 }
@@ -189,7 +189,7 @@ struct Vals6 updateAccelVals(uint32_t lastTime,struct Vals6 lastVals, struct Ang
     struct Output accelHold;
     accelHold = readGyro();
     //float accelHold[] = readAccel(); //accelerometer reads in g
-    uint32_t timeInterval=(timer_read()-lastTime)*1000000;//Sean, changed timerRead to timer_read, is that what you meantt?
+    uint32_t timeInterval=(timer_read()-lastTime)*1000000;
     int32_t interm[6];
     for(int i=0;i<3;i++){ //0-2 speed values, 3-5 position values
         //these equations should be updated to consider the roll and pitch angles of the plane
