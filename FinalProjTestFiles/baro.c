@@ -121,8 +121,7 @@ void readBaro() {
     float alt;
     //We're going with "1hPa pressure decrease is 8 meters"
     alt = ((data.pressure - zeroPress)*8/100);
-    //printf("pass/fail:  %d  ", rslt);
-    printf("Temp = %.2f C  Pressure = %.2f Pa Altitude = %.2f\n", data.temperature, data.pressure, alt);
+    //printf("Temp = %.2f C  Pressure = %.2f Pa Altitude = %.2f\n", data.temperature, data.pressure, alt);
     //sleep_ms(250);
 }
 

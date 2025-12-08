@@ -5,6 +5,9 @@
 #define GYRO
 struct Output {
     float readOut[7];
+    float linear[3];
+    float angular[3];
+    float temp;
 };
 
 void i2c_write_reg(uint8_t reg, uint8_t val);

@@ -27,31 +27,29 @@ int main() {
     }
     uint32_t *duties = get_duty(inPins);
     uint16_t *outStage=translate(nothing); //initial set, never used
-    //uint16_t *smoothOut={0, 200, 200, 200, 0, 0}; //initial smooth output, starts at neutral positions
+    uint16_t *smoothOut={0, 200, 200, 200, 0, 0}; //initial smooth output, starts at neutral positions
     uint16_t input[6];
     struct Output outGyro;
-    struct Vals6 accelVals;
-    struct Angles angles;
+    struct Vals6 accelVals; struct Vals6 accelValsTemp;
+    struct Angles angles; struct Angles anglesTemp;
     initGyro();
     initBaro();
     // initINS();
     uint32_t lastTimeRead=timer_read(); //used to track acceleration for speed calculation
     uint32_t speedVal; //initial speed must be 0 on boot
-    // int32_t *accelVals;
-    // int32_t *angles;
-    // int32_t accelValstemp[] = {0,0,0,0,0,0};
-    // accelVals=accelValstemp;
-    // int32_t anglestemp[] = {0,0,0};
-    // angles=anglestemp;
+    //int32_t *accelVals;
+    //int32_t *angles;
+    //int32_t accelValstemp[] = {0,0,0,0,0,0};
+    //accelVals=accelValstemp;
+    //int32_t anglestemp[] = {0,0,0};
+    //angles=anglestemp;
     while(1) {
-
-            angles = updateGyroVals(lastTimeRead, angles); //[Ax,Ay,Az]
-            accelVals=updateAccelVals(lastTimeRead,accelVals,angles); //[Vx,Vy,Vz, Dx,Dy,Dz]
-            lastTimeRead=timer_read(); //reads current time in us
-            //take input values and translate according to output pin configuration
-
-        
-        
+        anglesTemp=angles;
+        accelValsTemp=accelVals;
+        angles = updateGyroVals(lastTimeRead, anglesTemp); //[Ax,Ay,Az]
+        accelVals=updateAccelVals(lastTimeRead,accelValsTemp,angles); //[Vx,Vy,Vz, Dx,Dy,Dz]
+        lastTimeRead=timer_read(); //reads current time in us
+        //take input values and translate according to output pin configuration
         duties = get_duty(inPins);
           
         outStage = translate(duties); //values at this point are still from 0-400
@@ -60,7 +58,7 @@ int main() {
         //can probably prevent the bootup issue by omitting the smoothout on first run
         //smoothOut = smoothTransition(smoothOut,outStage); //slows down output controls to ensure that the user doesn't try to shift things too quickly
         //^^ smoothout array will always hold the latest outputted control array until this point
-        setAllPWM(outStage,outPins); //method located in controls file
+        setAllPWM(smoothOut,outPins); //method located in controls file
 
         // for(int i=0;i<6;i++) input[i]=(uint16_t)((duties[i]/4*.05+5)/100*0xffff);
         // for(uint8_t i = 0; i < 6; i++) { //output pwm values
@@ -71,8 +69,11 @@ int main() {
         //printf("\n");
         readBaro();
         outGyro = readGyro();
-        printf("Accel: X=%.3fg Y=%.3fg Z=%.3fg\n", outGyro.readOut[0], outGyro.readOut[1], outGyro.readOut[2]);
-        printf("Gyro: X=%.3f°/s Y=%.3f°/s Z=%.3f°/s\n", outGyro.readOut[3], outGyro.readOut[4], outGyro.readOut[5]);
+        //printf("Accel: X=%.3fg Y=%.3fg Z=%.3fg\n", outGyro.readOut[0], outGyro.readOut[1], outGyro.readOut[2]);
+        //printf("Gyro: X=%.3f°/s Y=%.3f°/s Z=%.3f°/s\n", outGyro.readOut[3], outGyro.readOut[4], outGyro.readOut[5]);
+
+        //printf("Roll: %u Pitch: %u yaw:%u\n", angles.vals[0],angles.vals[1],angles.vals[2]);
+        //printf("LAil: %u RAil: %u Elevator: %u, Prop: %u\n",outStage[1],outStage[2],outStage[3],outStage[0]); 
         //printf("Temperature: %2.2f degrees\n", outGyro.readOut[6]);
         //printf("X:%d Y:%d Z:%d D_x:%d D_y:%d D_z:%d\n", accelVals.vals[0], accelVals.vals[1], accelVals.vals[2], accelVals.vals[3], accelVals.vals[4], accelVals.vals[5]);
         //printf("Roll:%d Pitch:%d Yaw:%d\n", angles.vals[0], angles.vals[1], angles.vals[2]);

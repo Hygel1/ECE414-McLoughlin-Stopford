@@ -67,12 +67,21 @@ uint16_t *translate(uint32_t input[]){
     } else {
     output[0]=(uint16_t)input[4]; //propeller power control
     }
+<<<<<<< HEAD
     output[1]=(uint16_t)(400-(input[5])); //L-aileron control
     output[2]=(uint16_t)(400-(input[5])); // R-Aileron control, inverse of left
     output[3]=(uint16_t)input[3]; //elevator control;
     for(int i = 0; i < 6; i++) {
         if(output[i]>400&&output[i]<500) output[i]=400;
         else if(output[i]<0||output[i]>0xFF00) output[i]=0;
+=======
+    output[1]=(uint16_t)(input[5]+20); //L-aileron control
+    output[2]=(uint16_t)(input[5]); // R-Aileron control, inverse of left
+    output[3]=(uint16_t)input[3]; //elevator control;
+    for(int i=1;i<4;i++){ //bound to avoid overflow
+        if(output[i]>395) output[i]=395;
+        if(output[i]<5) output[i]=5;
+>>>>>>> 130340e3049dae851031f447e038c94f322a489b
     }
     return output;
 }
@@ -165,8 +174,13 @@ uint16_t *smoothTransition(uint16_t currentState[], uint16_t desiredPoint[]){
             if(currentState[i]-desiredPoint[i]>maxMove) smoothOutput[i]=currentState[i]-maxMove;
             else smoothOutput[i]=desiredPoint[i];
         }
+<<<<<<< HEAD
         if(smoothOutput[i]>395&&smoothOutput[i]<500) smoothOutput[i]=395; //clamp output to max
         else if(smoothOutput[i]<5||smoothOutput[i]>0xFF00) smoothOutput[i]=5; //clamp output to min
+=======
+        //if(smoothOutput[i]>395) smoothOutput[i]=395; //clamp output to max
+        //else if(smoothOutput[i]<5) smoothOutput[i]=5; //clamp output to min
+>>>>>>> 130340e3049dae851031f447e038c94f322a489b
     }
     return smoothOutput;
 }
@@ -175,12 +189,18 @@ uint16_t *smoothTransition(uint16_t currentState[], uint16_t desiredPoint[]){
  * Returns the angular distance travelled
  */
 struct Angles updateGyroVals(uint32_t lastTime, struct Angles lastVals){
-   // float gyroHold=readGyroVals(); // Sean WTF is readGyroVals
+   //float gyroHold=readGyroVals();
     struct Output gyroHold;
     gyroHold = readGyro();
+<<<<<<< HEAD
     float timeDiff=(timer_read()-lastTime)/1000000; //Sean, changed timerRead to timer_read, is that what you meantt?
     for(int i=3;i<6;i++){ //Sean I changed i so that we're getting the angle values
         angleVals.vals[i]=lastVals.vals[i]+gyroHold.readOut[i]*(timeDiff);
+=======
+    for(int i=0;i<3;i++){ 
+        uint32_t timeDiff=(timer_read()-lastTime)*1000000; 
+        angleVals.vals[i]=lastVals.vals[i]+gyroHold.angular[i]/9.81*(timeDiff*timeDiff);
+>>>>>>> 130340e3049dae851031f447e038c94f322a489b
     }
     //printf("Angular x: %.3f°/s y: %.3f°/s z: %.3f°/s | \n", gyroHold.readOut[3], gyroHold.readOut[4], gyroHold.readOut[5]);
     //printf("TD:%.8f | Roll:%d Pitch:%d Yaw:%d\n",timeDiff, angleVals.vals[0], angleVals.vals[1], angleVals.vals[2]);
@@ -192,12 +212,16 @@ struct Vals6 updateAccelVals(uint32_t lastTime,struct Vals6 lastVals, struct Ang
     struct Output accelHold;
     accelHold = readGyro();
     //float accelHold[] = readAccel(); //accelerometer reads in g
+<<<<<<< HEAD
     float timeInterval=(timer_read()-lastTime);//Sean, changed timerRead to timer_read, is that what you meantt?
+=======
+    uint32_t timeInterval=(timer_read()-lastTime)*1000000;
+>>>>>>> 130340e3049dae851031f447e038c94f322a489b
     int32_t interm[6];
     for(int i=0;i<3;i++){ //0-2 speed values, 3-5 position values
         //these equations should be updated to consider the roll and pitch angles of the plane
-        interm[i]=lastVals.vals[i]+accelHold.readOut[i]/9.81*(timeInterval); //can convert from m/s to mph or something
-        interm[i+3]=lastVals.vals[i+3]+accelHold.readOut[i]/9.81*(timeInterval*timeInterval); //percieved distance calc
+        interm[i]=lastVals.vals[i]+accelHold.linear[i]/9.81*(timeInterval); //can convert from m/s to mph or something
+        interm[i+3]=lastVals.vals[i+3]+accelHold.linear[i]/9.81*(timeInterval*timeInterval); //percieved distance calc
     } //theta=roll=angles.vals[0], alpha=pitch=angles.vals[1], beta=yaw=angles.vals[2]  - accelHold=deltaVals
     //modify 
 
