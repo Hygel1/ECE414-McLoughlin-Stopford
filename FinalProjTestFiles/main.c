@@ -44,10 +44,14 @@ int main() {
     // int32_t anglestemp[] = {0,0,0};
     // angles=anglestemp;
     while(1) {
-        //angles = updateGyroVals(lastTimeRead, angles); //[Ax,Ay,Az]
-        //accelVals=updateAccelVals(lastTimeRead,accelVals,angles); //[Vx,Vy,Vz, Dx,Dy,Dz]
-        lastTimeRead=timer_read(); //reads current time in us
-        //take input values and translate according to output pin configuration
+
+            angles = updateGyroVals(lastTimeRead, angles); //[Ax,Ay,Az]
+            accelVals=updateAccelVals(lastTimeRead,accelVals,angles); //[Vx,Vy,Vz, Dx,Dy,Dz]
+            lastTimeRead=timer_read(); //reads current time in us
+            //take input values and translate according to output pin configuration
+
+        
+        
         duties = get_duty(inPins);
           
         outStage = translate(duties); //values at this point are still from 0-400
@@ -70,5 +74,8 @@ int main() {
         printf("Accel: X=%.3fg Y=%.3fg Z=%.3fg\n", outGyro.readOut[0], outGyro.readOut[1], outGyro.readOut[2]);
         printf("Gyro: X=%.3f°/s Y=%.3f°/s Z=%.3f°/s\n", outGyro.readOut[3], outGyro.readOut[4], outGyro.readOut[5]);
         //printf("Temperature: %2.2f degrees\n", outGyro.readOut[6]);
+        //printf("X:%d Y:%d Z:%d D_x:%d D_y:%d D_z:%d\n", accelVals.vals[0], accelVals.vals[1], accelVals.vals[2], accelVals.vals[3], accelVals.vals[4], accelVals.vals[5]);
+        //printf("Roll:%d Pitch:%d Yaw:%d\n", angles.vals[0], angles.vals[1], angles.vals[2]);
+        //printf("LAil:%u RAil:%u Elev:%u Prop:%u\n", outStage[1], outStage[2], outStage[3], outStage[0]);
     }
 }

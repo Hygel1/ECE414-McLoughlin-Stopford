@@ -67,9 +67,13 @@ uint16_t *translate(uint32_t input[]){
     } else {
     output[0]=(uint16_t)input[4]; //propeller power control
     }
-    output[1]=(uint16_t)(input[5]+30); //L-aileron control
-    output[2]=(uint16_t)(input[5]-10); // R-Aileron control, inverse of left
+    output[1]=(uint16_t)(400-(input[5])); //L-aileron control
+    output[2]=(uint16_t)(400-(input[5])); // R-Aileron control, inverse of left
     output[3]=(uint16_t)input[3]; //elevator control;
+    for(int i = 0; i < 6; i++) {
+        if(output[i]>400&&output[i]<500) output[i]=400;
+        else if(output[i]<0||output[i]>0xFF00) output[i]=0;
+    }
     return output;
 }
 /**
@@ -153,10 +157,7 @@ uint16_t *smoothTransition(uint16_t currentState[], uint16_t desiredPoint[]){
     uint16_t maxMove=(timeElapsed/250); //10^6 (one second) / 400 (the alloted movement for one second) = 2500
     smoothOutput[0]=desiredPoint[0]; //propeller power can change instantly
     for(int i=1;i<6;i++){ //for all input points
-        if(desiredPoint[i]>395) desiredPoint[i]=395; //clamp desired point to max
-        else if(desiredPoint[i]<5) desiredPoint[i]=5; //clamp desired point to min
-
-        else if(desiredPoint[i]>currentState[i]){ //if currentState should move in the positive direction
+        if(desiredPoint[i]>currentState[i]){ //if currentState should move in the positive direction
             if(desiredPoint[i]-currentState[i]>maxMove) smoothOutput[i]=currentState[i]+maxMove; //if asking to move beyond the max, limit
             else smoothOutput[i]=desiredPoint[i]; //otherwise, just put to desired point
         }
@@ -164,8 +165,8 @@ uint16_t *smoothTransition(uint16_t currentState[], uint16_t desiredPoint[]){
             if(currentState[i]-desiredPoint[i]>maxMove) smoothOutput[i]=currentState[i]-maxMove;
             else smoothOutput[i]=desiredPoint[i];
         }
-        if(smoothOutput[i]>395) smoothOutput[i]=395; //clamp output to max
-        else if(smoothOutput[i]<5) smoothOutput[i]=5; //clamp output to min
+        if(smoothOutput[i]>395&&smoothOutput[i]<500) smoothOutput[i]=395; //clamp output to max
+        else if(smoothOutput[i]<5||smoothOutput[i]>0xFF00) smoothOutput[i]=5; //clamp output to min
     }
     return smoothOutput;
 }
@@ -177,10 +178,12 @@ struct Angles updateGyroVals(uint32_t lastTime, struct Angles lastVals){
    // float gyroHold=readGyroVals(); // Sean WTF is readGyroVals
     struct Output gyroHold;
     gyroHold = readGyro();
+    float timeDiff=(timer_read()-lastTime)/1000000; //Sean, changed timerRead to timer_read, is that what you meantt?
     for(int i=3;i<6;i++){ //Sean I changed i so that we're getting the angle values
-        uint32_t timeDiff=(timer_read()-lastTime)*1000000; //Sean, changed timerRead to timer_read, is that what you meantt?
-        angleVals.vals[i]=lastVals.vals[i]+gyroHold.readOut[i]/9.81*(timeDiff*timeDiff);
+        angleVals.vals[i]=lastVals.vals[i]+gyroHold.readOut[i]*(timeDiff);
     }
+    //printf("Angular x: %.3f°/s y: %.3f°/s z: %.3f°/s | \n", gyroHold.readOut[3], gyroHold.readOut[4], gyroHold.readOut[5]);
+    //printf("TD:%.8f | Roll:%d Pitch:%d Yaw:%d\n",timeDiff, angleVals.vals[0], angleVals.vals[1], angleVals.vals[2]);
     return angleVals;
 }
 // [Vx,Vy,Vz,Dx,Dy,Dz]
@@ -189,7 +192,7 @@ struct Vals6 updateAccelVals(uint32_t lastTime,struct Vals6 lastVals, struct Ang
     struct Output accelHold;
     accelHold = readGyro();
     //float accelHold[] = readAccel(); //accelerometer reads in g
-    uint32_t timeInterval=(timer_read()-lastTime)*1000000;//Sean, changed timerRead to timer_read, is that what you meantt?
+    float timeInterval=(timer_read()-lastTime);//Sean, changed timerRead to timer_read, is that what you meantt?
     int32_t interm[6];
     for(int i=0;i<3;i++){ //0-2 speed values, 3-5 position values
         //these equations should be updated to consider the roll and pitch angles of the plane
@@ -198,7 +201,6 @@ struct Vals6 updateAccelVals(uint32_t lastTime,struct Vals6 lastVals, struct Ang
     } //theta=roll=angles.vals[0], alpha=pitch=angles.vals[1], beta=yaw=angles.vals[2]  - accelHold=deltaVals
     //modify 
 
-    //SEAN ARE THE COS AND SINE SUPPOSED TO USE DEGREES?
     accelVals.vals[0]=lastVals.vals[0]+interm[0]*(cos(angles.vals[1]*0.01745329)+cos(angles.vals[2]*0.01745329));
     accelVals.vals[3]=lastVals.vals[3]+interm[3]*(cos(angles.vals[1]*0.01745329)+cos(angles.vals[2]*0.01745329));
 

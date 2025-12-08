@@ -113,13 +113,15 @@ bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &dev);
 }
 
 void readBaro() {
-    bmp5_get_sensor_data(&data, &config, &dev);
+    int8_t rslt;
+    rslt = bmp5_get_sensor_data(&data, &config, &dev);
     //This eq might be dependent on temp and not work in a climate controlled room, not too sure though
     //float alt = ((pow((101325/data.pressure), .190284)-1)*(data.temperature+273.15))/.0065;
     //float alt = 145366.45*(1-pow((data.pressure/100/1013.25), .190284));
     float alt;
     //We're going with "1hPa pressure decrease is 8 meters"
     alt = ((data.pressure - zeroPress)*8/100);
+    //printf("pass/fail:  %d  ", rslt);
     printf("Temp = %.2f C  Pressure = %.2f Pa Altitude = %.2f\n", data.temperature, data.pressure, alt);
     //sleep_ms(250);
 }
