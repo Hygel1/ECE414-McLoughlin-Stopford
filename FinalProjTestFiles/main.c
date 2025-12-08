@@ -56,9 +56,9 @@ int main() {
         //outStage = guiderail(outStage,angles,accelVals,0); //use guiderail function to correct values accordingly
         //at this point, outStage is the 'most aggressive' version of the user's intended maneuver
         //can probably prevent the bootup issue by omitting the smoothout on first run
-        smoothOut = smoothTransition(smoothOut,outStage); //slows down output controls to ensure that the user doesn't try to shift things too quickly
+        //smoothOut = smoothTransition(smoothOut,outStage); //slows down output controls to ensure that the user doesn't try to shift things too quickly
         //^^ smoothout array will always hold the latest outputted control array until this point
-        setAllPWM(outStage,outPins); //method located in controls file
+        setAllPWM(smoothOut,outPins); //method located in controls file
 
         // for(int i=0;i<6;i++) input[i]=(uint16_t)((duties[i]/4*.05+5)/100*0xffff);
         // for(uint8_t i = 0; i < 6; i++) { //output pwm values
@@ -72,7 +72,9 @@ int main() {
         //printf("Accel: X=%.3fg Y=%.3fg Z=%.3fg\n", outGyro.readOut[0], outGyro.readOut[1], outGyro.readOut[2]);
         //printf("Gyro: X=%.3f°/s Y=%.3f°/s Z=%.3f°/s\n", outGyro.readOut[3], outGyro.readOut[4], outGyro.readOut[5]);
 
-        printf("Roll: %u Pitch: %u yaw:%u\n", angles.vals[0],angles.vals[1],angles.vals[2]);
+        //printf("Roll: %u Pitch: %u yaw:%u\n", angles.vals[0],angles.vals[1],angles.vals[2]);
+        //printf("LAil: %u RAil: %u Elevator: %u, Prop: %u\n",outStage[1],outStage[2],outStage[3],outStage[0]); 
         //printf("Temperature: %2.2f degrees\n", outGyro.readOut[6]);
+        
     }
 }
