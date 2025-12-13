@@ -54,6 +54,9 @@ bool initGyro(){
     i2c_write_reg(REG_CTRL1_XL, 0x48);
     //configure gyro: ODR = 104Hz, +/- 1000dps
     i2c_write_reg(REG_CTRL2_G, 0x48);
+    for(int i=0;i<7;i++){
+        offset.readOut[i]=0;
+    }
     offset = readGyro(); //get calibration values
 
 }
@@ -69,6 +72,9 @@ struct Output readGyro(){
         // for(int i = 0; i < 6; i++) {
         //     out.oldOut[i] = out.readOut[i];
         // }
+        out.readOut[0] = (combine_bytes(accel[0], accel[1]) * 0.000122f) - offset.readOut[0];
+        out.readOut[1] = combine_bytes(accel[2], accel[3]) * 0.000122f - offset.readOut[1];
+        out.readOut[2] = combine_bytes(accel[4], accel[5]) * 0.000122f - offset.readOut[2]; //keep default Z at 1g
         //out.readOut[0] = (combine_bytes(accel[0], accel[1]) * 0.000122f) - offset.readOut[0]; //out[0] = xAccel
         //out.readOut[1] = combine_bytes(accel[2], accel[3]) * 0.000122f - offset.readOut[1]; //out[1] = yAccel
         //out.readOut[2] = combine_bytes(accel[4], accel[5]) * 0.000122f - offset.readOut[2] + 1; //out[2]=zAccel keep default Z at 1g
@@ -81,13 +87,7 @@ struct Output readGyro(){
         //out.readOut[4] = combine_bytes(gyro[2], gyro[3]) *.030f - offset.readOut[4];
         //out.readOut[5]= combine_bytes(gyro[4], gyro[5])  *.030f - offset.readOut[5];
 
-        out.angular[0]= combine_bytes(gyro[0], gyro[1])  *.030f - offset.readOut[3];
-        out.angular[1] = combine_bytes(gyro[2], gyro[3]) *.030f - offset.readOut[4];
-        out.angular[2]= combine_bytes(gyro[4], gyro[5])  *.030f - offset.readOut[5];
-
-        //out.readOut[6] = combine_bytes(temp[0], temp[1]);
-        out.temp = combine_bytes(temp[0], temp[1]);
-        
+        out.readOut[6] = combine_bytes(temp[0], temp[1]);
         return out;
 }
 // float gyroOutVals[3]; //used for both accel and gyro individual outputs

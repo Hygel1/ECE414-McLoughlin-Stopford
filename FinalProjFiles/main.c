@@ -76,6 +76,12 @@ int main() {
         //printf("Roll: %u Pitch: %u yaw:%u\n", angles.vals[0],angles.vals[1],angles.vals[2]);
         //printf("LAil: %u RAil: %u Elevator: %u, Prop: %u\n",outStage[1],outStage[2],outStage[3],outStage[0]); 
         //printf("Temperature: %2.2f degrees\n", outGyro.readOut[6]);
+<<<<<<< HEAD:FinalProjFiles/main.c
 
+=======
+        //printf("X:%d Y:%d Z:%d D_x:%d D_y:%d D_z:%d\n", accelVals.vals[0], accelVals.vals[1], accelVals.vals[2], accelVals.vals[3], accelVals.vals[4], accelVals.vals[5]);
+        //printf("Roll:%d Pitch:%d Yaw:%d\n", angles.vals[0], angles.vals[1], angles.vals[2]);
+        //printf("LAil:%u RAil:%u Elev:%u Prop:%u\n", outStage[1], outStage[2], outStage[3], outStage[0]);
+>>>>>>> cb8c9fd1fe4ac964c986e689d7fe33cba69c57a0:FinalProjTestFiles/main.c
     }
 }
