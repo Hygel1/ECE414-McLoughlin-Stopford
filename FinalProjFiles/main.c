@@ -25,7 +25,7 @@ int main() {
     for(uint8_t i =0; i <6; i++) {
         pwm_pin_init(0x8000, outPins[i],i);
     }
-    uint32_t *duties = get_duty(inPins);
+    struct duties dutiesVals = get_duty(inPins);
     uint16_t *outStage=translate(nothing); //initial set, never used
     uint16_t *smoothOut={0, 200, 200, 200, 0, 0}; //initial smooth output, starts at neutral positions
     uint16_t input[6];
@@ -50,8 +50,9 @@ int main() {
         accelVals=updateAccelVals(lastTimeRead,accelValsTemp,angles); //[Vx,Vy,Vz, Dx,Dy,Dz]
         lastTimeRead=timer_read(); //reads current time in us
         //take input values and translate according to output pin configuration
-        duties = get_duty(inPins);
-          
+        dutiesVals = get_duty(inPins);
+        
+
         outStage = translate(duties); //values at this point are still from 0-400
         //outStage = guiderail(outStage,angles,accelVals,0); //use guiderail function to correct values accordingly
         //at this point, outStage is the 'most aggressive' version of the user's intended maneuver
@@ -75,6 +76,6 @@ int main() {
         //printf("Roll: %u Pitch: %u yaw:%u\n", angles.vals[0],angles.vals[1],angles.vals[2]);
         //printf("LAil: %u RAil: %u Elevator: %u, Prop: %u\n",outStage[1],outStage[2],outStage[3],outStage[0]); 
         //printf("Temperature: %2.2f degrees\n", outGyro.readOut[6]);
-        
+
     }
 }
